@@ -9,27 +9,26 @@ var Connect = require('connect'),
 // debug level
 var debug = 0;
 
-// VNC server info: {host: ..., port: ...} 
-var noVNC = module.exports = function(vnc){
+// web server
+var webServer = module.exports.webServer = Connect();
+
+webServer.use(Connect.staticCache({maxLength: 256*1024, maxObjects: 8}))
+webServer.use(Connect.static(__dirname));
+    
+webServer.use(function(req, res){
+    res.writeHeader(200, {'content-type': 'text/html'});
+    res.end(Fs.readFileSync(__dirname+'/novnc.html'));
+});
+
+// ws2tcp proxy
+// vnc: {host: ..., port: ...}, VNC server info
+var tcpProxy = module.exports.tcpProxy = function(vnc){
     vnc = vnc || {};
     
     vnc.host = vnc.host || 'localhost';
     vnc.port = vnc.port || 5900;
-
-    // http server
-    var srv = Connect();
     
-    // static, cache
-    srv.use(Connect.staticCache({maxLength: 256*1024, maxObjects: 8}))
-    srv.use(Connect.static(__dirname));
-    
-    srv.use(function(req, res){
-        res.writeHeader(200, {'content-type': 'text/html'});
-        res.end(Fs.readFileSync(__dirname+'/novnc.html'));
-    });
-    
-    // tcp proxy over ws
-    var tcproxy = function(ws){    
+    return function(ws){
         // create tcp connection to VNC server
         var ts = Net.connect(vnc, function(){
             if (debug) console.log('tcp connection...');
@@ -115,21 +114,18 @@ var noVNC = module.exports = function(vnc){
             ws.close();
         });
     };
-    
-    return {srv: srv, tcproxy: tcproxy};
 };
 
 // simple test 
+/*
 var http = require('http'),
     WebSocket = require('wspp'),
     WebSocketServer = WebSocket.Server;
-
-var test = noVNC({host: '192.188.1.101', port: 5900});
-
-var srv = http.createServer(test.srv);
+    
+var srv = http.createServer(webServer);
 srv.listen(5600);
 console.log('noVNC proxy server listening on 5600');
 
-var wss = new WebSocketServer({server: srv, path: '/websockify'});
-wss.on('connection', test.tcproxy);
-
+var wss = new WebSocketServer({server: srv, path: '/novnc'});
+wss.on('connection', tcpProxy({host: '192.188.1.101', port: 5900}));
+*/
