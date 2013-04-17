@@ -1,6 +1,6 @@
 {
   "author": "Tom Zhou <zs68j2ee@gmail.com>",
-  "name": "peervnc",
+  "name": "peer-novnc",
   "description": "noVNC port of Node.js for Peers",
   "version": "0.0.1",
   "repository": {
@@ -12,7 +12,7 @@
   },
   "main": "index",
   "bin": {
-    "peervnc": "./bin/peervnc"
+    "peer-novnc": "./bin/peer-novnc"
   },
   "dependencies": {
     "iwebpp.io": "latest",
