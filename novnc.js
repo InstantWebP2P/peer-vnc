@@ -50,7 +50,7 @@ var tcpProxy = module.exports.tcpProxy = function(vnc){
                     });
                     
                     setTimeout(function(){
-                        ws.resume();
+                        if (ws && ws.resume) ws.resume();
                     }, 100); // 100ms 
                 }
             });
@@ -78,7 +78,7 @@ var tcpProxy = module.exports.tcpProxy = function(vnc){
                         });
                         
                         setTimeout(function(){
-                            ts.resume();
+                            if (ts && ts.resume) ts.resume();
                         }, 100); // 100ms 
                     }
                 } else {                    
