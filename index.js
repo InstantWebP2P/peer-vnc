@@ -4,7 +4,8 @@ var WEBPP = require('iwebpp.io'),
     http = require('http'),
     https = require('https'),
     WebSocket = require('wspp'),
-    WebSocketServer = WebSocket.Server;;
+    WebSocketServer = WebSocket.Server,
+    Connect = require('connect');
 
 
 // debug level
@@ -71,10 +72,43 @@ var Proxy = module.exports = function(vncs, fn, options){
 	    }
 	    
 	    // 4.
-	    // hook noVNC web server on name-client
-	    nmcln.bsrv.srv.on('request', noVNC.webServer);
+	    // create http App
+	    var appHttp = Connect();
+	    
+	    // 4.1
+	    // add third-party connect middle-ware
+	    
+	    // 4.1.1
+	    // vToken authentication
+	    // TBD...
+	    appHttp.use(function(req, res, next){
+	        // check vtoken in case secure vURL mode
+	        // TBD...
+	        if (self.nmcln.secmode) {
+	            // always allow TURN agent request
+	            /*if () {
+	            
+	            } else {
+	                // 3.2.2
+	                // check vtoken in case STUN session
+	                
+	            }*/
+	            next();
+	        } else {
+	            // go on 
+	            next();
+	        }
+	    });
+	    
+	    // 4.2
+	    // add noVNC web service in App
+	    appHttp.use(noVNC.webServer);
 	    
 	    // 5.
+	    // hook http App on name-client
+	    nmcln.bsrv.srv.on('request', appHttp);
+	    
+	    // 6.
 	    // pass proxy URLs back
 	    fn(null, self.proxyURL);
 	});
