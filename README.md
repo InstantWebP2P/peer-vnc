@@ -1,4 +1,4 @@
-node-novnc
+peer-vnc
 ==========
 
 noVNC port of Node.js for Peers. noVNC - https://github.com/kanaka/noVNC
