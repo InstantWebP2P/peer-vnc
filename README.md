@@ -1,4 +1,4 @@
 node-novnc
 ==========
 
-noVNC port of Node.js
+noVNC port of Node.js for Peers 
