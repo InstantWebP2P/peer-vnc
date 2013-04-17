@@ -65,7 +65,7 @@ start: function(callback) {
     UI.initSetting('shared', true);
     UI.initSetting('view_only', false);
     UI.initSetting('connectTimeout', 2);
-    UI.initSetting('path', 'novnc');
+    UI.initSetting('path', 'websockify');
     UI.initSetting('repeaterID', '');
 
     UI.rfb = RFB({'target': $D('noVNC_canvas'),
@@ -531,10 +531,10 @@ connect: function() {
     UI.closeSettingsMenu();
     UI.toggleConnectPanel();
 
-    host = window.location.hostname; ///$D('noVNC_host').value;
-    port = window.location.port; ///$D('noVNC_port').value;
+    host = $D('noVNC_host').value;
+    port = $D('noVNC_port').value;
     password = $D('noVNC_password').value;
-    path = window.location.pathname; ///$D('noVNC_path').value;
+    path = $D('noVNC_path').value;
     if ((!host) || (!port)) {
         throw("Must set host and port");
     }

@@ -7,7 +7,7 @@ var Connect = require('connect'),
 
 
 // debug level
-var debug = 0;
+var debug = 1;
 
 // web server
 var webServer = module.exports.webServer = Connect();
@@ -117,8 +117,7 @@ var tcpProxy = module.exports.tcpProxy = function(vnc){
 };
 
 // simple test 
-/*
-var http = require('http'),
+/*var http = require('http'),
     WebSocket = require('wspp'),
     WebSocketServer = WebSocket.Server;
     
@@ -126,6 +125,7 @@ var srv = http.createServer(webServer);
 srv.listen(5600);
 console.log('noVNC proxy server listening on 5600');
 
-var wss = new WebSocketServer({server: srv, path: '/novnc'});
+var wss = new WebSocketServer({server: srv, path: '/websockify'});
 wss.on('connection', tcpProxy({host: '192.188.1.101', port: 5900}));
 */
+
