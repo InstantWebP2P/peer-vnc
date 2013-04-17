@@ -20,7 +20,7 @@ var noVNC = module.exports = function(vnc){
     var srv = Connect();
     
     // static, cache
-	srv.use(Connect.staticCache({maxLength: 256*1024, maxObjects: 8}))
+    srv.use(Connect.staticCache({maxLength: 256*1024, maxObjects: 8}))
     srv.use(Connect.static(__dirname));
     
     srv.use(function(req, res){
@@ -41,7 +41,7 @@ var noVNC = module.exports = function(vnc){
                 } else {
                     data = new Buffer(data);
                 }
-                if (debug) console.log('ws.onmessage...'+data.length+','+data.toString());
+                if (debug) console.log('ws.onmessage...'+data.length);
                 
                 if (!ts.write(data)) {
                     ws.pause();
@@ -56,11 +56,11 @@ var noVNC = module.exports = function(vnc){
                 }
             });
             ws.on('close', function(){
-                console.log('ws.onclose...');
+                if (debug) console.log('ws.onclose...');
                 ts.end();
             });
             ws.on('error', function(){
-                console.log('ws.onerror...');
+                if (debug) console.log('ws.onerror...');
                 // send RFB error code
                 // TBD...
                 ts.end('error');
@@ -68,9 +68,10 @@ var noVNC = module.exports = function(vnc){
             
             // relay data from tcp to ws
             ts.on('data', function(data){
-                console.log('ts.ondata...'+data.length+','+data.toString());
+                if (debug) console.log('ts.ondata...'+data.length);
+               
                 if (ws.supports.binary) {
-                    if (!ws.send(data, {binary: true, mask: true})) {
+                    if (!ws.send(data, {binary: true})) {
                         ts.pause();
                         
                         ws.on('drain', function(){
@@ -82,7 +83,7 @@ var noVNC = module.exports = function(vnc){
                         }, 100); // 100ms 
                     }
                 } else {                    
-                    if (!ws.send(data.toString('base64'), {binary: false, mask: true})) {
+                    if (!ws.send(data.toString('base64'), {binary: false})) {
                         ts.pause();
                         
                         ws.on('drain', function(){
@@ -96,21 +97,21 @@ var noVNC = module.exports = function(vnc){
                 }
             });
             ts.on('end', function(){
-                console.log('ts.onend...');
+                if (debug) console.log('ts.onend...');
                 ws.close();
             });
             ts.on('close', function(){
-                console.log('ts.onclose...');
+                if (debug) console.log('ts.onclose...');
                 ws.close();
             });
             ts.on('error', function(){
-                console.log('ts.onerror...');
+                if (debug) console.log('ts.onerror...');
                 ws.close();
             });
         });
         
         ts.on('error', function(err){
-            console.log('tcp connection error '+err);
+            if (debug) console.log('tcp connection error '+err);
             ws.close();
         });
     };
