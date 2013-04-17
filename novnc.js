@@ -7,7 +7,7 @@ var Connect = require('connect'),
 
 
 // debug level
-var debug = 1;
+var debug = 0;
 
 // web server
 var webServer = module.exports.webServer = Connect();
@@ -29,7 +29,7 @@ var tcpProxy = module.exports.tcpProxy = function(vnc){
     vnc.port = vnc.port || 5900;
     
     return function(ws){
-        // create tcp connection to VNC server
+        // create tcp connection to VNC server        
         var ts = Net.connect(vnc, function(){
             if (debug) console.log('tcp connection...');
             

@@ -1,5 +1,5 @@
 // noVNC proxy, tom zhou <zs68j2ee@gmail.com>
-var iWebPP.IO = require('iwebpp.io'),
+var WEBPP = require('iwebpp.io'),
     noVNC = require('./novnc'),
     http = require('http'),
     https = require('https'),
@@ -55,14 +55,15 @@ var Proxy = module.exports = function(vncs, fn, options){
 	    
 	    // 3.
 	    // setup noVNC proxy
-	    for (var idx = 0; idx < vncs.length; idx ++) {
+	    // TBD... support multiple noVNC
+	    for (var idx = 0; idx < 1/*vncs.length*/; idx ++) {
 	        var vncstrs = vncs[idx].split(':');
 	        var vnchost = vncstrs[0];
 	        var vncport = vncstrs[1] || 5900; // default VNC port
 	    
 	        // create ws server to proxy VNC/RFB data
-	        var wspath = '/novnc' + (idx ? idx : '');
-	        var vncwss = new WebSocketServer({server: nmcln.bsrv.srv, path: wspath});
+	        var wspath = '/websockify' + (idx ? idx : '');
+	        var vncwss = new WebSocketServer({httpp: true, server: nmcln.bsrv.srv, path: wspath});
 	        
 	        vncwss.on('connection', noVNC.tcpProxy({host: vnchost, port: vncport}));
 	        
