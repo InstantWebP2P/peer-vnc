@@ -1,11 +1,11 @@
 {
   "author": "Tom Zhou <zs68j2ee@gmail.com>",
-  "name": "novnc",
-  "description": "noVNC port of Node.js",
+  "name": "peer-novnc",
+  "description": "noVNC port of Node.js for Peers",
   "version": "0.0.1",
   "repository": {
     "type": "git",
-    "url": "git://github.com/InstantWebP2P/node-novnc.git"
+    "url": "git://github.com/InstantWebP2P/peer-novnc.git"
   },
   "engines": {
     "node": ">=0.8.0"
@@ -15,6 +15,8 @@
     "novnc": "./bin/novnc"
   },
   "dependencies": {
+    "iwebpp.io": "latest",
+    "wspp": "latest",
     "connect": "2.7.x",
     "commander": "~1.1.1",
     "optimist": "0.3.x"
