@@ -19,10 +19,12 @@ var noVNC = module.exports = function(vnc){
     // http server
     var srv = Connect();
     
+    // static, cache
+	srv.use(Connect.staticCache({maxLength: 256*1024, maxObjects: 8}))
     srv.use(Connect.static(__dirname));
     
     srv.use(function(req, res){
-        res.writeHeader(200, {'content-type', 'text/html'});
+        res.writeHeader(200, {'content-type': 'text/html'});
         res.end(Fs.readFileSync(__dirname+'/novnc.html'));
     });
     
