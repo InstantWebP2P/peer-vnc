@@ -1,4 +1,4 @@
 peer-vnc
 ==========
 
-noVNC port of Node.js for Peers. noVNC - https://github.com/kanaka/noVNC
+Web VNC client integrating noVNC with Node.js and iwebpp.io.(noVNC - https://github.com/kanaka/noVNC)
