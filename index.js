@@ -82,7 +82,7 @@ var noVNC = module.exports = function(vnc){
                         }, 100); // 100ms 
                     }
                 } else {                    
-                    if (!ws.send(ws.send(data.toString('base64'), {binary: false, mask: true})) {
+                    if (!ws.send(data.toString('base64'), {binary: false, mask: true})) {
                         ts.pause();
                         
                         ws.on('drain', function(){
