@@ -16,7 +16,7 @@ var help = [
     "Starts a peer-vnc server using the specified command-line options",
     "",
     "options:",
-    "  -t, --target  localhost:5900,localhost:5901  URL of the server, the multiple VNC separate by comma",
+    "  -t, --target  localhost:5900,localhost:5901  Host:port pairs of VNC server, the multiple VNC separate by comma",
     "  -u, --user    USER                           User to drop privileges once server socket is bound",
     "  -h, --help                                   You're staring at it"
 ].join('\n');
