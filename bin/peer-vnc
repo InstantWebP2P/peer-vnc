@@ -1,0 +1,59 @@
+#!/usr/bin/env node
+
+//
+// Please install node-httpp binary in your system exec dir, like /usr/bin/ or /usr/local/bin/
+//
+
+var path = require('path'),
+    fs = require('fs'),
+    util  = require('util'),
+    argv = require('optimist').argv,
+    Proxy = require('../index');
+
+var help = [
+    "usage: peer-vnc [options] ",
+    "",
+    "Starts a peer-vnc server using the specified command-line options",
+    "",
+    "options:",
+    "  -t, --target  localhost:5900,localhost:5901  URL of the server, the multiple VNC separate by comma",
+    "  -u, --user    USER                           User to drop privileges once server socket is bound",
+    "  -h, --help                                   You're staring at it"
+].join('\n');
+
+if (argv.h || argv.help || Object.keys(argv).length === 2) {
+  return util.puts(help);
+}
+
+var target  = argv.t || argv.target,
+    user    = argv.u || argv.user;
+
+
+// 
+// Check target VNC server
+//
+var vncsrvs;
+
+if (target) {
+    vncsrvs = target.split(',');
+} else {
+    return util.puts(help);
+}
+
+//
+// Create the VNC client server with the specified options
+//
+var server = new Proxy(vncsrvs, function(err, proxyURL){
+        console.log('VNC                            Proxy URL(please open it on browser)');
+        for (var k in proxyURL) {
+            console.log(k+'        '+proxyURL[k]);
+        }
+    }, {keyword: keyword});
+
+//
+// Drop privileges if requested
+//
+if (typeof user === 'string') {
+    process.setuid(user);
+}
+

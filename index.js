@@ -123,8 +123,8 @@ var Proxy = module.exports = function(vncs, fn, options){
 
 // simple test 
 /*
-var server = new Proxy(['192.188.1.101:5900'], function(err, proxyURL){
-        console.log('VNC                            Proxy URL(please open it on browser)');
+var server = new Proxy(['localhost:5900'], function(err, proxyURL){
+        console.log('VNC                   Proxy URL(please open it on browser)');
         for (var k in proxyURL) {
             console.log(k+'        '+proxyURL[k]);
         }
