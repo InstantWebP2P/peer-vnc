@@ -1,11 +1,11 @@
 #peer-vnc
 ==========
 
-Web VNC client integrating noVNC with Node.js and iwebpp.io.(noVNC - https://github.com/kanaka/noVNC)
+Web VNC client integrating noVNC with Node.js and iWebPP.io
 
 ### Features
 
-* Support all browsers as web vnc client with noVNC
+* Support all web browsers as web vnc client with noVNC
 * Support access vnc server from everywhere as peer web proxy with iWebPP.io
 * Provide end-to-end security
 
