@@ -48,7 +48,7 @@ var server = new Proxy(vncsrvs, function(err, proxyURL){
         for (var k in proxyURL) {
             console.log(k+'        '+proxyURL[k]);
         }
-    }, {keyword: keyword});
+    });
 
 //
 // Drop privileges if requested
