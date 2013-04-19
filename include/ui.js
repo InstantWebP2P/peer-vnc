@@ -65,7 +65,7 @@ start: function(callback) {
     UI.initSetting('shared', true);
     UI.initSetting('view_only', false);
     UI.initSetting('connectTimeout', 2);
-    UI.initSetting('path', 'websockify');
+    UI.initSetting('path', 'peervnc');
     UI.initSetting('repeaterID', '');
 
     UI.rfb = RFB({'target': $D('noVNC_canvas'),

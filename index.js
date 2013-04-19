@@ -63,7 +63,7 @@ var Proxy = module.exports = function(vncs, fn, options){
 	        var vncport = vncstrs[1] || 5900; // default VNC port
 	    
 	        // create ws server to proxy VNC/RFB data
-	        var wspath = '/websockify' + (idx ? idx : '');
+	        var wspath = '/peervnc' + (idx ? idx : '');
 	        var vncwss = new WebSocketServer({httpp: true, server: nmcln.bsrv.srv, path: wspath});
 	        
 	        vncwss.on('connection', noVNC.tcpProxy({host: vnchost, port: vncport}));
@@ -122,11 +122,11 @@ var Proxy = module.exports = function(vncs, fn, options){
 };
 
 // simple test 
-/*
+
 var server = new Proxy(['192.188.1.101:5900'], function(err, proxyURL){
         console.log('VNC                   Proxy URL(please open it on browser)');
         for (var k in proxyURL) {
             console.log(k+'        '+proxyURL[k]);
         }
     });
-*/
+

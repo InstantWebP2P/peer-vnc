@@ -125,7 +125,7 @@ var srv = http.createServer(webServer);
 srv.listen(5600);
 console.log('noVNC proxy server listening on 5600');
 
-var wss = new WebSocketServer({server: srv, path: '/websockify'});
+var wss = new WebSocketServer({server: srv, path: '/peervnc'});
 wss.on('connection', tcpProxy({host: '192.188.1.101', port: 5900}));
 */
 
