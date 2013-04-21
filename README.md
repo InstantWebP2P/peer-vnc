@@ -29,11 +29,11 @@ Web VNC client integrating noVNC with Node.js and iWebPP.io
     2. launch proxy server by node-httpp-binary-directory/node.exe vnc-example.js in case Windows machine.
        console dump like below:
        VNC                   Proxy URL(please open it on browser)
-       192.168.1.1:5900        https://af5e83731df02546.vurl.iwebpp.com:51688/vtoken/bb39fb0eb29f081e/websockify
+       192.168.1.1:5900        https://af5e83731df02546.vurl.iwebpp.com:51688/vtoken/bb39fb0eb29f081e/peervnc
        
     3. use peer-vnc binary on Linux, like  ./bin/peer-vnc -t 192.168.1.1:5900
        VNC                   Proxy URL(please open it on browser)
-       192.168.1.1:5900        https://41c522dab4ae47f9.vurl.iwebpp.com:51688/vtoken/516c97b3070de2e1/websockify
+       192.168.1.1:5900        https://41c522dab4ae47f9.vurl.iwebpp.com:51688/vtoken/516c97b3070de2e1/peervnc
 
 ### TODO:
 
