@@ -1,4 +1,6 @@
-// noVNC proxy, tom zhou <zs68j2ee@gmail.com>
+// noVNC proxy implementation with iWebPP.io
+// Copyright (c) 2013 Tom Zhou<zs68j2ee@gmail.com>
+
 var WEBPP = require('iwebpp.io'),
     noVNC = require('./novnc'),
     http = require('http'),
