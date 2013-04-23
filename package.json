@@ -2,7 +2,7 @@
   "author": "Tom Zhou <zs68j2ee@gmail.com>",
   "name": "peer-vnc",
   "description": "noVNC port of Node.js for Peers",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "repository": {
     "type": "git",
     "url": "git://github.com/InstantWebP2P/peer-vnc.git"
