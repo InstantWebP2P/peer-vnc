@@ -36,7 +36,7 @@ var Proxy = module.exports = function(vncs, fn, options){
     var nmcln = self.nmcln = new WEBPP({
         usrinfo: {
             domain: (options && options.domain) || '51dese.com',
-            usrkey: (options && options.usrkey) || 'dese'
+            usrkey: (options && options.usrkey) || 'peervnc'
         },
         
         srvinfo: {
