@@ -56,8 +56,8 @@ start: function(callback) {
     WebUtil.selectStylesheet(UI.getSetting('stylesheet'));
 
     /* Populate the controls if defaults are provided in the URL */
-    UI.initSetting('host', window.location.hostname);
-    UI.initSetting('port', window.location.port);
+    ///UI.initSetting('host', window.location.hostname);
+    ///UI.initSetting('port', window.location.port);
     UI.initSetting('password', '');
     UI.initSetting('encrypt', (window.location.protocol === "https:"));
     UI.initSetting('true_color', true);
@@ -65,7 +65,7 @@ start: function(callback) {
     UI.initSetting('shared', true);
     UI.initSetting('view_only', false);
     UI.initSetting('connectTimeout', 2);
-    UI.initSetting('path', 'peervnc');
+    ///UI.initSetting('path', window.location.pathname);
     UI.initSetting('repeaterID', '');
 
     UI.rfb = RFB({'target': $D('noVNC_canvas'),
@@ -104,7 +104,7 @@ start: function(callback) {
     }
     UI.setBarPosition();
 
-    $D('noVNC_host').focus();
+    ///$D('noVNC_host').focus();
 
     UI.setViewClip();
     Util.addEvent(window, 'resize', UI.setViewClip);
@@ -289,14 +289,14 @@ toggleConnectPanel: function() {
         $D('noVNC_controls').style.display = "none";
         $D('connectButton').className = "noVNC_status_button";
         UI.connSettingsOpen = false;
-        UI.saveSetting('host');
-        UI.saveSetting('port');
+        ///UI.saveSetting('host');
+        ///UI.saveSetting('port');
         //UI.saveSetting('password');
     } else {
         $D('noVNC_controls').style.display = "block";
         $D('connectButton').className = "noVNC_status_button_selected";
         UI.connSettingsOpen = true;
-        $D('noVNC_host').focus();
+        ///$D('noVNC_host').focus();
     }
 },
 
@@ -322,7 +322,7 @@ toggleSettingsPanel: function() {
         UI.updateSetting('shared');
         UI.updateSetting('view_only');
         UI.updateSetting('connectTimeout');
-        UI.updateSetting('path');
+        ///UI.updateSetting('path');
         UI.updateSetting('repeaterID');
         UI.updateSetting('stylesheet');
         UI.updateSetting('logging');
@@ -366,7 +366,7 @@ settingsApply: function() {
     UI.saveSetting('shared');
     UI.saveSetting('view_only');
     UI.saveSetting('connectTimeout');
-    UI.saveSetting('path');
+    ///UI.saveSetting('path');
     UI.saveSetting('repeaterID');
     UI.saveSetting('stylesheet');
     UI.saveSetting('logging');
@@ -481,7 +481,7 @@ updateVisualState: function() {
     $D('noVNC_shared').disabled = connected;
     $D('noVNC_view_only').disabled = connected;
     $D('noVNC_connectTimeout').disabled = connected;
-    $D('noVNC_path').disabled = connected;
+    ///$D('noVNC_path').disabled = connected;
     $D('noVNC_repeaterID').disabled = connected;
 
     if (connected) {
@@ -531,10 +531,10 @@ connect: function() {
     UI.closeSettingsMenu();
     UI.toggleConnectPanel();
 
-    host = $D('noVNC_host').value;
-    port = $D('noVNC_port').value;
+    host = window.location.hostname; ///$D('noVNC_host').value;
+    port = window.location.port; ///$D('noVNC_port').value;
     password = $D('noVNC_password').value;
-    path = $D('noVNC_path').value;
+    path = window.location.pathname.substr(1); ///$D('noVNC_path').value;
     if ((!host) || (!port)) {
         throw("Must set host and port");
     }

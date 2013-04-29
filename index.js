@@ -48,7 +48,9 @@ var Proxy = module.exports = function(vncs, fn, options){
             turn: (options && options.turn) || [
                 {ip: 'iwebpp.com', agent: 51866, proxy: 51688}
             ]
-        }
+        },
+        
+        vmode: WEBPP.vURL.URL_MODE_PATH
     });
 	
 	// 2.1
@@ -79,28 +81,7 @@ var Proxy = module.exports = function(vncs, fn, options){
 	    
 	    // 4.1
 	    // add third-party connect middle-ware
-	    
-	    // 4.1.1
-	    // vToken authentication
 	    // TBD...
-	    appHttp.use(function(req, res, next){
-	        // check vtoken in case secure vURL mode
-	        // TBD...
-	        if (self.nmcln.secmode) {
-	            // always allow TURN agent request
-	            /*if () {
-	            
-	            } else {
-	                // 3.2.2
-	                // check vtoken in case STUN session
-	                
-	            }*/
-	            next();
-	        } else {
-	            // go on 
-	            next();
-	        }
-	    });
 	    
 	    // 4.2
 	    // add noVNC web service in App
