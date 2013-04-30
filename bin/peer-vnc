@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+
 //
 // Please install node-httpp binary in your system exec dir, like /usr/bin/ or /usr/local/bin/
 //
@@ -26,8 +27,7 @@ if (argv.h || argv.help || Object.keys(argv).length === 2) {
 var target  = argv.t || argv.target,
     user    = argv.u || argv.user;
 
-
-// 
+//
 // Check target VNC server
 //
 var vncsrvs;
@@ -54,3 +54,5 @@ var server = new Proxy(vncsrvs, function(err, proxyURL){
 if (typeof user === 'string') {
     process.setuid(user);
 }
+
+
