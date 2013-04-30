@@ -4,9 +4,7 @@
 // Please install node-httpp binary in your system exec dir, like /usr/bin/ or /usr/local/bin/
 //
 
-var path = require('path'),
-    fs = require('fs'),
-    util  = require('util'),
+var util  = require('util'),
     argv = require('optimist').argv,
     Proxy = require('../index');
 
@@ -56,4 +54,3 @@ var server = new Proxy(vncsrvs, function(err, proxyURL){
 if (typeof user === 'string') {
     process.setuid(user);
 }
-

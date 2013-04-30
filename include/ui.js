@@ -64,7 +64,7 @@ start: function(callback) {
     UI.initSetting('cursor', false);
     UI.initSetting('shared', true);
     UI.initSetting('view_only', false);
-    UI.initSetting('connectTimeout', 2);
+    UI.initSetting('connectTimeout', 10);
     ///UI.initSetting('path', window.location.pathname);
     UI.initSetting('repeaterID', '');
 
