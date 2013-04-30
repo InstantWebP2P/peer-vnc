@@ -14,4 +14,4 @@ srv.listen(5443);
 console.log('noVNC https server listening on 5600');
 
 var wss = new WebSocketServer({server: srv, path: '/peervnc'});
-wss.on('connection', noVNC.tcpProxy({host: 'localhost', port: 5900}));
+wss.on('connection', noVNC.tcpProxy({host: 'localhost', port: 5901}));
