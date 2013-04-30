@@ -60,8 +60,7 @@ var Proxy = module.exports = function(vncs, fn, options){
 	    
 	    // 3.
 	    // setup noVNC proxy
-	    // TBD... support multiple noVNC
-	    for (var idx = 0; idx < 1/*vncs.length*/; idx ++) {
+	    for (var idx = 0; idx < vncs.length; idx ++) {
 	        var vncstrs = vncs[idx].split(':');
 	        var vnchost = vncstrs[0];
 	        var vncport = vncstrs[1] || 5900; // default VNC port
