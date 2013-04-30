@@ -1,7 +1,8 @@
 var noVNC = require('../novnc'),
     https = require('https'),
     WebSocket = require('wspp'),
-    WebSocketServer = WebSocket.Server;
+    WebSocketServer = WebSocket.Server,
+    fs = require('fs');
     
     
 var options = {
