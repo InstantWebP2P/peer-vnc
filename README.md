@@ -11,7 +11,7 @@ Web VNC client integrating noVNC with Node.js and iWebPP.io
 
 ### Install
 * npm install peer-vnc, or git clone https://github.com/InstantWebP2P/peer-vnc.git && cd peer-vnc && npm install
-* peer-vnc depend on node-httpp, please npm install httpp-binary.if the binay didn't work, you can build it from source:
+* peer-vnc depend on node-httpp, please npm install httpp-binary.if the binay didn't work, just build it from source:
   https://github.com/InstantWebP2P/node-httpp
 
 ### Usage/API:
