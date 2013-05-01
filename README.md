@@ -7,6 +7,7 @@ Web VNC client integrating noVNC with Node.js and iWebPP.io
 
 * Support all HTML5-enabled web browsers
 * Support access vnc server from everywhere
+* Support proxy to multiple vnc server in one iwebpp.io client
 * Provide end-to-end security
 
 ### Install
@@ -37,7 +38,6 @@ Web VNC client integrating noVNC with Node.js and iWebPP.io
 
 ### TODO:
 
-* Support proxy to multiple VNC server
 * Enable proxy via STUN session
 
 <br/>
