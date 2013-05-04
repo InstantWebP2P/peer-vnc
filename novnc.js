@@ -42,58 +42,66 @@ var tcpProxy = module.exports.tcpProxy = function(vnc){
                     data = new Buffer(data);
                 }
                 if (debug) console.log('ws.onmessage...'+data.length);
-                
-                if (!ts.write(data)) {
-                    ws.pause();
+               
+                try { 
+                    if (!ts.write(data)) {
+                        ws.pause();
                     
-                    ts.once('drain', function(){
-                        ws.resume();
-                    });
+                        ts.once('drain', function(){
+                            ws.resume();
+                        });
                     
-                    setTimeout(function(){
-                        if (ws && ws.resume) ws.resume();
-                    }, 100); // 100ms 
+                        setTimeout(function(){
+                            if (ws && ws.resume) ws.resume();
+                        }, 100); // 100ms 
+                    }
+                } catch (e) {
+                    if (debug) console.log('ws2ts send error '+e);
+                    ws.close();
                 }
             });
             ws.on('close', function(){
                 if (debug) console.log('ws.onclose...');
-                ts.end();
+                ts.close();
             });
             ws.on('error', function(){
                 if (debug) console.log('ws.onerror...');
-                // send RFB error code
-                // TBD...
-                ts.end('error');
+                ts.close();
             });
             
             // relay data from tcp to ws
             ts.on('data', function(data){
                 if (debug) console.log('ts.ondata...'+data.length);
-               
-                if (ws.supports.binary) {
-                    if (!ws.send(data, {binary: true})) {
-                        ts.pause();
+                
+                try { 
+                    if (ws.supports.binary) {
+                        if (!ws.send(data, {binary: true})) {
+                            ts.pause();
                         
-                        ws.on('drain', function(){
-                            ts.resume();
-                        });
+                            ws.on('drain', function(){
+                                ts.resume();
+                            });
+                         
+                            setTimeout(function(){
+                                if (ts && ts.resume) ts.resume();
+                            }, 100); // 100ms 
+                        }
+                    } else {                    
+                        if (!ws.send(data.toString('base64'), {binary: false})) {
+                            ts.pause();
                         
-                        setTimeout(function(){
-                            if (ts && ts.resume) ts.resume();
-                        }, 100); // 100ms 
+                            ws.on('drain', function(){
+                                ts.resume();
+                            });
+                        
+                            setTimeout(function(){
+                                ts.resume();
+                            }, 100); // 100ms 
+                        }
                     }
-                } else {                    
-                    if (!ws.send(data.toString('base64'), {binary: false})) {
-                        ts.pause();
-                        
-                        ws.on('drain', function(){
-                            ts.resume();
-                        });
-                        
-                        setTimeout(function(){
-                            ts.resume();
-                        }, 100); // 100ms 
-                    }
+                } catch (e) {
+                    if (debug) console.log('ts2ws send error '+e);
+                    ts.close();
                 }
             });
             ts.on('end', function(){
