@@ -62,11 +62,11 @@ var tcpProxy = module.exports.tcpProxy = function(vnc){
             });
             ws.on('close', function(){
                 if (debug) console.log('ws.onclose...');
-                ts.close();
+                ts.end();
             });
             ws.on('error', function(){
                 if (debug) console.log('ws.onerror...');
-                ts.close();
+                ts.end();
             });
             
             // relay data from tcp to ws
@@ -101,7 +101,7 @@ var tcpProxy = module.exports.tcpProxy = function(vnc){
                     }
                 } catch (e) {
                     if (debug) console.log('ts2ws send error '+e);
-                    ts.close();
+                    ts.end();
                 }
             });
             ts.on('end', function(){
