@@ -72,6 +72,20 @@ var Proxy = module.exports = function(vncs, fn, options){
 	        vncwss.on('connection', noVNC.tcpProxy({host: vnchost, port: vncport}));
 	        
 	        self.proxyURL[vncs[idx]] = nmcln.vurl + wspath;
+	        
+	        // 3.1
+	        // report peer-service
+	        // like {vurl:x,cate:x,name:x,desc:x,tags:x,acls:x,accounting:x,meta:x}
+	        self.reportService({
+	            vurl: self.proxyURL[vncs[idx]],
+	            cate: 'peer-vnc',
+	            name: 'vnc'+idx,
+	            meta: {vnchost: vnchost, vncport: vncport}
+	        });
+	        
+	        // 3.2
+	        // update peer-service: connetion loss, etc
+	        // TBD...
 	    }
 	    
 	    // 4.
