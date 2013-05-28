@@ -76,7 +76,7 @@ var Proxy = module.exports = function(vncs, fn, options){
 	        // 3.1
 	        // report peer-service
 	        // like {vurl:x,cate:x,name:x,desc:x,tags:x,acls:x,accounting:x,meta:x}
-	        self.reportService({
+	        nmcln.reportService({
 	            vurl: self.proxyURL[vncs[idx]],
 	            cate: 'peer-vnc',
 	            name: 'vnc'+idx,
