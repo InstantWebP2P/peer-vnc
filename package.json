@@ -22,7 +22,6 @@
     "optimist": "0.3.x"
   },
   "devDependencies": {
-    "expect.js": "0.1.x",
-    "connect": "~2.7.0"
+    "httpp-binary": "latest"
   }
 }
