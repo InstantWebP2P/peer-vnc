@@ -13,7 +13,7 @@ var debug = 0;
 // web server
 var webServer = module.exports.webServer = Connect();
 
-webServer.use(Connect.staticCache({maxLength: 256*1024, maxObjects: 8}))
+///webServer.use(Connect.staticCache({maxLength: 256*1024, maxObjects: 8}))
 webServer.use(Connect.static(__dirname));
     
 webServer.use(function(req, res){
