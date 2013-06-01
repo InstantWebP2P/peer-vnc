@@ -16,6 +16,7 @@ var help = [
     "",
     "options:",
     "  -t, --target  localhost:5900,localhost:5901  Host:port pairs of VNC server, the multiple VNC separate by comma",
+    "  -k, --key     User key                       Key for the registered user on ivncbox.com",
     "  -u, --user    USER                           User to drop privileges once server socket is bound",
     "  -h, --help                                   You're staring at it"
 ].join('\n');
@@ -25,17 +26,22 @@ if (argv.h || argv.help || Object.keys(argv).length === 2) {
 }
 
 var target  = argv.t || argv.target,
+    usrkey  = argv.k || argv.key,
     user    = argv.u || argv.user;
 
 //
 // Check target VNC server
 //
-var vncsrvs;
+var vncsrvs, options = {};
 
 if (target) {
     vncsrvs = target.split(',');
 } else {
     return util.puts(help);
+}
+
+if (usrkey) {
+    options.usrkey = usrkey;
 }
 
 //
@@ -46,7 +52,7 @@ var server = new Proxy(vncsrvs, function(err, proxyURL){
         for (var k in proxyURL) {
             console.log(k+'        '+proxyURL[k]);
         }
-    });
+    }, options);
 
 //
 // Drop privileges if requested
