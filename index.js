@@ -7,7 +7,8 @@ var WEBPP = require('iwebpp.io'),
     https = require('https'),
     WebSocket = require('wspp'),
     WebSocketServer = WebSocket.Server,
-    Connect = require('connect');
+    Connect = require('connect'),
+    OS = require('os');
 
 
 // debug level
@@ -81,7 +82,10 @@ var Proxy = module.exports = function(vncs, fn, options){
 	            vurl: self.proxyURL[vncs[idx]],
 	            cate: 'peer-vnc',
 	            name: 'vnc'+idx,
-	            meta: {vnchost: vnchost, vncport: vncport}
+	            meta: {
+                        vnchost: vnchost === 'localhost' ? OS.hostname() : vnchost,
+                        vncport: vncport
+                    }
 	        });
 	        
 	        // 3.2
