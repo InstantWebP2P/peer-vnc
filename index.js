@@ -70,7 +70,7 @@ var Proxy = module.exports = function(vncs, fn, options){
 	        vncport = (vncport < 5900) ? 5900 + vncport : vncport;
 	        
 	        // create ws server to proxy VNC/RFB data
-	        var wspath = '/peervnc-'+vnchost+'-'+vncport;
+	        var wspath = '/'+vnchost+'-'+vncport;
 	        var vncwss = new WebSocketServer({httpp: true, server: nmcln.bsrv.srv, path: wspath});
 	        
 	        vncwss.on('connection', noVNC.tcpProxy({host: vnchost, port: vncport}));
