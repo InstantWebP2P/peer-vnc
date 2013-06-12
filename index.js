@@ -73,7 +73,7 @@ var Proxy = module.exports = function(vncs, fn, options){
 	        var wspath = '/peervnc-'+vnchost+'-'+vncport;
 	        var vncwss = new WebSocketServer({httpp: true, server: nmcln.bsrv.srv, path: wspath});
 	        
-	        vncwss.on('connection', noVNC.tcpProxy({host: vnchost, port: (vncport < 5900) ? 5900 + vncport : vncport}));
+	        vncwss.on('connection', noVNC.tcpProxy({host: vnchost, port: vncport}));
 	        
 	        self.proxyURL[vncs[idx]] = nmcln.vurl + wspath;
 	        
