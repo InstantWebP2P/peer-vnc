@@ -37,7 +37,7 @@ Web VNC client integrating noVNC with Node.js and iWebPP.io
        192.168.1.1:5900        https://41c522dab4ae47f9.vurl.iwebpp.com:51688/vtoken/516c97b3070de2e1/peervnc
       
     4. screenshoot
-    https://ivncbox.com/peervnc-screen.jpg
+https://ivncbox.com/peervnc-screen.jpg
 
 ### TODO:
 
