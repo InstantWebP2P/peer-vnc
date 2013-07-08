@@ -18,6 +18,7 @@ var help = [
     "  -t, --target  localhost:5900,localhost:5901  Host:port pairs of VNC server, the multiple VNC separate by comma",
     "  -k, --key     User key                       Key for the registered user on ivncbox.com",
     "  -u, --user    USER                           User to drop privileges once server socket is bound",
+    "  -s  --secmode ssl or acl                     Secure mode: ssl or host-based ACL",
     "  -h, --help                                   You're staring at it"
 ].join('\n');
 
@@ -27,6 +28,7 @@ if (argv.h || argv.help || Object.keys(argv).length === 2) {
 
 var target  = argv.t || argv.target,
     usrkey  = argv.k || argv.key,
+    secmode = argv.s || argv.secmode,
     user    = argv.u || argv.user;
 
 //
@@ -38,6 +40,10 @@ if (target) {
     vncsrvs = target.split(',');
 } else {
     return util.puts(help);
+}
+
+if (secmode) {
+    options.secmode = secmode;
 }
 
 if (usrkey) {
