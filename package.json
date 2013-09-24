@@ -7,6 +7,13 @@
     "type": "git",
     "url": "git://github.com/InstantWebP2P/peer-vnc.git"
   },
+  "keywords": [
+    "peer",
+    "p2p",
+    "webp2p",
+    "http",
+    "vnc"
+  ],
   "engines": {
     "node": ">=0.8.0"
   },
