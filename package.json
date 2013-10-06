@@ -24,7 +24,7 @@
   "dependencies": {
     "iwebpp.io": "latest",
     "wspp": "latest",
-    "connect": "2.7.x",
+    "connect": "2.8.x",
     "commander": "~1.1.1",
     "optimist": "0.3.x"
   }
