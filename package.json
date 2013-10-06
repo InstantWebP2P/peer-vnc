@@ -22,7 +22,7 @@
     "peer-vnc": "./bin/peer-vnc"
   },
   "dependencies": {
-    "iwebpp.io": "0.0.18",
+    "iwebpp.io": "latest",
     "wspp": "latest",
     "connect": "2.7.x",
     "commander": "~1.1.1",
