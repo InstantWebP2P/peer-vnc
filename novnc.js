@@ -48,11 +48,11 @@ var tcpProxy = module.exports.tcpProxy = function(vnc){
                         ws.pause();
                     
                         ts.once('drain', function(){
-                            ws.resume();
+                            if (ws && (ws.readyState == ws.OPEN)) ws.resume();
                         });
                     
                         setTimeout(function(){
-                            if (ws && ws.resume) ws.resume();
+                            if (ws && (ws.readyState == ws.OPEN)) ws.resume();
                         }, 100); // 100ms 
                     }
                 } catch (e) {
