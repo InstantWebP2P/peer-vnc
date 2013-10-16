@@ -8,7 +8,8 @@ var WEBPP = require('iwebpp.io'),
     WebSocket = require('wspp'),
     WebSocketServer = WebSocket.Server,
     Connect = require('connect'),
-    OS = require('os');
+    OS = require('os'),
+    UDT = require('udt');
 
 
 // debug level
@@ -51,7 +52,7 @@ var Proxy = module.exports = function(vncs, fn, options){
             ]
         },
         
-        vmode: WEBPP.vURL.URL_MODE_PATH,
+        vmode: WEBPP.vURL.URL_MODE_HOST,
         
         // secure mode
         secmode: (options && options.secmode === 'ssl') ? WEBPP.SEP.SEP_SEC_SSL :
@@ -114,6 +115,37 @@ var Proxy = module.exports = function(vncs, fn, options){
 	    // 5.
 	    // hook http App on name-client
 	    nmcln.bsrv.srv.on('request', appHttp);
+	    
+	    // 5.1
+	    // handle http CONNECT request in case come from forward proxy
+        // notes: the idea is see https request/websocket proxy as reverse proxy to destination http website,
+        // so, create connection to peer-proxy httpps server self.
+	    nmcln.bsrv.srv.on('connect', function(req, socket, head){
+            var roptions = {
+			        port: nmcln.port,
+			        host: nmcln.ipaddr,
+                localAddress: {
+                    addr: nmcln.ipaddr
+                }
+	        };
+		        
+            if (debug) console.log('http tunnel proxy, connect to self %s:%d', nmcln.ipaddr, nmcln.port);
+            
+            var srvSocket = UDT.connect(roptions, function() {
+                if (debug) console.log('http tunnel proxy, got connected!');   
+                 
+			    socket.write('HTTP/1.1 200 Connection Established\r\n' +
+			                 'Proxy-agent: Node-Proxy\r\n' +
+			                 '\r\n');					    
+			    srvSocket.pipe(socket);
+			    socket.pipe(srvSocket);
+            });
+            
+		    srvSocket.on('error', function(e) {
+		        console.log("http tunnel proxy, socket error: " + e);
+		        socket.end();
+		    });
+	    });
 	    
 	    // 6.
 	    // pass proxy URLs back

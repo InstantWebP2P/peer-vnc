@@ -13,6 +13,18 @@ var debug = 0;
 // web server
 var webServer = module.exports.webServer = Connect();
 
+// rewrite req.url to remove vToken string
+var vtokenregex = /\/vtoken\/([0-9]|[a-f]){16}/gi;
+
+webServer.use(function(req, res, next){
+    if (vtokenregex.test(req.url)) {
+        res.writeHead(301, {'location': req.url.replace(vtokenregex, '')});
+        res.end();
+    } else {
+        next();
+    }
+});
+
 ///webServer.use(Connect.staticCache({maxLength: 256*1024, maxObjects: 8}))
 webServer.use(Connect.static(__dirname));
     
