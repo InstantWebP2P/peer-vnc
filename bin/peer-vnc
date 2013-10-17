@@ -17,8 +17,8 @@ var help = [
     "options:",
     "  -t, --target  localhost:5900,localhost:5901  Host:port pairs of VNC server, the multiple VNC separate by comma",
     "  -k, --key     User key                       Key for the registered user on ivncbox.com",
-    "  -u, --user    USER                           User to drop privileges once server socket is bound",
     "  -s  --secmode ssl or acl                     Secure mode: ssl or host-based ACL",
+    "  -u, --user    USER                           User to drop privileges once server socket is bound",
     "  -h, --help                                   You're staring at it"
 ].join('\n');
 
