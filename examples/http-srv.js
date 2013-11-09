@@ -10,3 +10,4 @@ console.log('noVNC http server listening on 5080');
 
 var wss = new WebSocketServer({server: srv, path: '/peervnc'});
 wss.on('connection', noVNC.tcpProxy({host: 'localhost', port: 5901}));
+console.log('please access http://localhost:5080/peervnc');
