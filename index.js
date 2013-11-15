@@ -119,7 +119,7 @@ var Proxy = module.exports = function(vncs, fn, options){
 	    // 5.1
 	    // handle http CONNECT request in case come from forward proxy
         // notes: the idea is see https request/websocket proxy as reverse proxy to destination http website,
-        // so, create connection to peer-proxy httpps server self.
+        // so, create connection to peer-vnc httpps server self.
 	    nmcln.bsrv.srv.on('connect', function(req, socket, head){
             var roptions = {
 			        port: nmcln.port,
