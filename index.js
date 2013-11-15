@@ -134,7 +134,7 @@ var Proxy = module.exports = function(vncs, fn, options){
             var srvSocket = UDT.connect(roptions, function() {
                 if (debug) console.log('http tunnel proxy, got connected!');   
                 
-                srvSocket.write(head);
+                ///srvSocket.write(head);
 			    socket.pipe(srvSocket);
 			     
 			    socket.write('HTTP/1.1 200 Connection Established\r\n' +
