@@ -61,7 +61,7 @@ var Proxy = module.exports = function(vncs, fn, options){
 	
 	// 2.1
 	// check ready
-	nmcln.on('ready', function(){
+	nmcln.once('ready', function(){
 	    if (debug) console.log('name-client ready on vURL:'+nmcln.vurl);
 	    
 	    // 3.
