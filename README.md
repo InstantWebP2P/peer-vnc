@@ -10,6 +10,7 @@ Web VNC client integrating noVNC with Node.js and iWebPP.io
 * Expose VNC desktop behind NAT/FW
 * Proxy to multiple VNC server in single iwebpp.io client
 * Provide end-to-end security
+* Run over STUN session with iwebpp.io-stun-proxy
 
 ### Install
 * npm install peer-vnc, or git clone https://github.com/InstantWebP2P/peer-vnc.git && cd peer-vnc && npm install
@@ -37,9 +38,6 @@ Web VNC client integrating noVNC with Node.js and iWebPP.io
        VNC                   Proxy URL(please open it on browser)
        192.168.1.1:5900        https://41c522dab4ae47f9.vurl.iwebpp.com:51688/vtoken/516c97b3070de2e1/peervnc
 
-### TODO:
-
-* Enable proxy via STUN session
 
 <br/>
 ### License
