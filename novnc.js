@@ -7,8 +7,8 @@ var Connect = require('connect'),
     Fs = require('fs');
 
 
-// debug level
-var debug = 0;
+// Debug level
+var Debug = 0;
 
 // web server
 var webServer = module.exports.webServer = Connect();
@@ -44,16 +44,16 @@ var tcpProxy = module.exports.tcpProxy = function(vnc){
     return function(ws){
         // create tcp connection to VNC server        
         var ts = Net.connect(vnc, function(){
-            if (debug) console.log('tcp connection...');
+            if (Debug) console.log('tcp connection...');
             
             // relay data from ws to tcp
             ws.on('message', function(data, flags){
                 if (flags.binary) {
-                    if (debug) console.log('binary ws message');
+                    if (Debug) console.log('binary ws message');
                 } else {
                     data = new Buffer(data);
                 }
-                if (debug) console.log('ws.onmessage...'+data.length);
+                if (Debug) console.log('ws.onmessage...'+data.length);
                
                 try { 
                     if (!ts.write(data)) {
@@ -68,22 +68,22 @@ var tcpProxy = module.exports.tcpProxy = function(vnc){
                         }, 100); // 100ms 
                     }
                 } catch (e) {
-                    if (debug) console.log('ws2ts send error '+e);
+                    if (Debug) console.log('ws2ts send error '+e);
                     ws.close();
                 }
             });
             ws.on('close', function(){
-                if (debug) console.log('ws.onclose...');
+                if (Debug) console.log('ws.onclose...');
                 ts.end();
             });
             ws.on('error', function(){
-                if (debug) console.log('ws.onerror...');
+                if (Debug) console.log('ws.onerror...');
                 ts.end();
             });
             
             // relay data from tcp to ws
             ts.on('data', function(data){
-                if (debug) console.log('ts.ondata...'+data.length);
+                if (Debug) console.log('ts.ondata...'+data.length);
                 
                 try { 
                     if (ws.supports.binary) {
@@ -112,26 +112,26 @@ var tcpProxy = module.exports.tcpProxy = function(vnc){
                         }
                     }
                 } catch (e) {
-                    if (debug) console.log('ts2ws send error '+e);
+                    if (Debug) console.log('ts2ws send error '+e);
                     ts.end();
                 }
             });
             ts.on('end', function(){
-                if (debug) console.log('ts.onend...');
+                if (Debug) console.log('ts.onend...');
                 ws.close();
             });
             ts.on('close', function(){
-                if (debug) console.log('ts.onclose...');
+                if (Debug) console.log('ts.onclose...');
                 ws.close();
             });
             ts.on('error', function(){
-                if (debug) console.log('ts.onerror...');
+                if (Debug) console.log('ts.onerror...');
                 ws.close();
             });
         });
         
         ts.on('error', function(err){
-            if (debug) console.log('tcp connection error '+err);
+            if (Debug) console.log('tcp connection error '+err);
             ws.close();
         });
     };

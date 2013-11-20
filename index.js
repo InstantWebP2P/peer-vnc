@@ -12,10 +12,10 @@ var WEBPP = require('iwebpp.io'),
     UDT = require('udt');
 
 
-// debug level
+// Debug level
 // 1: display error, proxy entry
 // 2: display vnc rfb info
-var debug = 0;
+var Debug = 0;
 
 // Proxy class
 // a proxy will contain one iwebpp.io name-client
@@ -62,7 +62,7 @@ var Proxy = module.exports = function(vncs, fn, options){
 	// 2.1
 	// check ready
 	nmcln.once('ready', function(){
-	    if (debug) console.log('name-client ready on vURL:'+nmcln.vurl);
+	    if (Debug) console.log('name-client ready on vURL:'+nmcln.vurl);
 	    
 	    // 3.
 	    // setup noVNC proxy
@@ -129,10 +129,10 @@ var Proxy = module.exports = function(vncs, fn, options){
                 }
 	        };
 		        
-            if (debug) console.log('http tunnel proxy, connect to self %s:%d', nmcln.ipaddr, nmcln.port);
+            if (Debug) console.log('http tunnel proxy, connect to self %s:%d', nmcln.ipaddr, nmcln.port);
             
             var srvSocket = UDT.connect(roptions, function() {
-                if (debug) console.log('http tunnel proxy, got connected!');   
+                if (Debug) console.log('http tunnel proxy, got connected!');   
                 
                 ///srvSocket.write(head);
 			    socket.pipe(srvSocket);
