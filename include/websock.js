@@ -283,7 +283,7 @@ function init(protocols) {
     // but it does not.
     try {
         // use wss but ws
-        if (bt && ('binaryType' in (new WebSocket("ws://localhost:17523")))) {
+        if (bt && ('binaryType' in (new WebSocket("wss://localhost:17523")))) {
             Util.Info("Detected binaryType support in WebSockets");
             wsbt = true;
         }
