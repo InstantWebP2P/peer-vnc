@@ -68,7 +68,7 @@
 
     4. STUN/TURN session setup case, please refer to demos/clnt.js
     
-    5. For web service over STUN, please refer to https://github.com/InstantWebP2P/iwebpp.io-stun-proxy
+### For web service over STUN, please refer to https://github.com/InstantWebP2P/iwebpp.io-stun-proxy
 
 ### More demos:
 
