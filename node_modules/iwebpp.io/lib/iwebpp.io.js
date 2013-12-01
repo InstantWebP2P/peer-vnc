@@ -1957,9 +1957,10 @@ nmCln.prototype.reportService = function(srv, fn, tmo){
     opc_msg.evcbcnt = self.reportsrvCbCnt++;
 
     // 2.1
-    // fill service info
-    srv.domain = self.usrinfo.domain;
-    srv.usrkey = self.usrinfo.usrkey;
+    // fill service info, check default parameters
+    srv.domain = srv.domain || self.usrinfo.domain;
+    srv.usrkey = srv.usrkey || self.usrinfo.usrkey;
+    srv.vurl   = srv.vurl   || self.vurl;
     srv.timeAt = Date.now();
     ///srv.geosAt  = ; // TBD...
     opc_msg.offer = {
@@ -2013,9 +2014,10 @@ nmCln.prototype.updateService = function(srv, fn, tmo){
     opc_msg.evcbcnt = self.updatesrvCbCnt++;
 
     // 2.1
-    // fill service info
-    srv.domain = self.usrinfo.domain;
-    srv.usrkey = self.usrinfo.usrkey;
+    // fill service info, check default parameters
+    srv.domain = srv.domain || self.usrinfo.domain;
+    srv.usrkey = srv.usrkey || self.usrinfo.usrkey;
+    srv.vurl   = srv.vurl   || self.vurl;
     srv.timeAt = Date.now();
     ///srv.geosAt  = ; // TBD...
     opc_msg.offer = {
@@ -2066,9 +2068,9 @@ nmCln.prototype.queryService = function(srv, fn, tmo){
     opc_msg.evcbcnt = self.querysrvCbCnt++;
 
     // 2.1
-    // fill service info
-    srv.domain = self.usrinfo.domain;
-    srv.usrkey = self.usrinfo.usrkey;
+    // fill service info, check default parameters
+    srv.domain = srv.domain || self.usrinfo.domain;
+    srv.usrkey = srv.usrkey || self.usrinfo.usrkey;
     srv.timeAt = Date.now();
     ///srv.geosAt  = ; // TBD...
     opc_msg.offer = {
