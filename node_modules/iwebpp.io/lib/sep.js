@@ -56,6 +56,10 @@ exports.sep_opc_srv_update_answer = exports.SEP_OPC_SRV_UPDATE_ANSWER = 25;
 exports.sep_opc_vurl_info_offer  = exports.SEP_OPC_VURL_INFO_OFFER  = 26;
 exports.sep_opc_vurl_info_answer = exports.SEP_OPC_VURL_INFO_ANSWER = 27;
 
+// Peer service query opcode:
+exports.sep_opc_srv_query_offer  = exports.SEP_OPC_SRV_QUERY_OFFER  = 28;
+exports.sep_opc_srv_query_answer = exports.SEP_OPC_SRV_QUERY_ANSWER = 29;
+
 // SEP answer state
 exports.sep_opc_state_ready = exports.SEP_OPC_STATE_READY = 0;
 exports.sep_opc_state_fail  = exports.SEP_OPC_STATE_FAIL  = 1;

@@ -813,6 +813,22 @@ nmCln.prototype._LSM_setupSdpSession = function() {
                     console.log('update service failed:'+JSON.stringify(data));
                 }
                 break;
+                
+            case SEP.SEP_OPC_SRV_QUERY_ANSWER:
+                // 1.
+                // check answer state
+                if (data.answer.state === SEP.SEP_OPC_STATE_READY) {
+                    // 2.
+                    // send back service info
+                    self.emit('querysrv'+data.evcbcnt, data.answer.srv);
+                    
+                    ///console.log('query service successfully:'+JSON.stringify(data));
+                } else {
+                    // return error info
+                    self.emit('querysrv'+data.evcbcnt, {err: 'query serivce failed '+(data.answer.error ? data.answer.error : '')});
+                    console.log('query service failed:'+JSON.stringify(data));
+                }
+                break;                
             // service management opc <- ////////////////////////////////////
             
             // vURL management opc -> ///////////////////////////////////////
@@ -2014,6 +2030,59 @@ nmCln.prototype.updateService = function(srv, fn, tmo){
     });
     
     return self;    
+};
+
+// query peer service
+nmCln.prototype.queryService = function(srv, fn, tmo){
+    var self = this;
+    
+    // callback event count
+    self.querysrvCbCnt = self.querysrvCbCnt || 0;
+
+    // 1.
+    // added event listener with timeout
+    var t = setTimeout(function(){
+	    self.removeAllListeners('querysrv'+self.querysrvCbCnt);
+        if (fn) fn('queryService timeout');
+    }, (tmo || 60)*1000); // 60s timeout in default
+    
+    self.once('querysrv'+self.querysrvCbCnt, function(srv){
+        clearTimeout(t);
+
+        if (srv.err) {
+            if (fn) fn(srv.err+',query service failed');
+        } else {
+            if (fn) fn(null, srv);
+        }
+    });
+
+    // 2.
+    // fill offer message
+    var opc_msg = {};
+    opc_msg.opc = SEP.SEP_OPC_SRV_QUERY_OFFER;
+    
+    // 2.0
+    // !!! place callback count in message context
+    opc_msg.evcbcnt = self.querysrvCbCnt++;
+
+    // 2.1
+    // fill service info
+    srv.domain = self.usrinfo.domain;
+    srv.usrkey = self.usrinfo.usrkey;
+    srv.timeAt = Date.now();
+    ///srv.geosAt  = ; // TBD...
+    opc_msg.offer = {
+        srv: srv
+    };
+    if (Debug) console.log('query service:'+JSON.stringify(srv));
+    
+    // 3.
+    // send opc 
+    self.sendOpcMsg(opc_msg, function(err){
+        if (err && fn) fn(err+',queryService failed'); 
+    });
+    
+    return self;
 };
 
 // ACL entry update
