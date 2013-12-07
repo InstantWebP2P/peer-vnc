@@ -32,12 +32,6 @@ var protocolVersion = 13;
 var closeTimeout = 30000; // Allow 5 seconds to terminate the connection cleanly
 
 /**
- * Node version 0.4 and 0.6 compatibility
- */
-
-var isNodeV4 = /^v0\.4/.test(process.version);
-
-/**
  * WebSocket implementation
  */
 
@@ -506,15 +500,6 @@ function initAsClient(address, protocols, options) {
   var expectedServerKey = shasum.digest('base64');
 
   var agent = options.value.agent;
-  // node<=v0.4.x compatibility
-  if (!agent && isNodeV4) {
-    isNodeV4 = true;
-    agent = new httpObj.Agent({
-      host: serverUrl.hostname,
-      hole: options.value.hole || {port: -1},
-      port: port
-    });
-  }
 
   var headerHost = serverUrl.hostname;
   // Append port number to Host and Origin header, only if specified in the url and non-default
@@ -567,10 +552,6 @@ function initAsClient(address, protocols, options) {
    || options.isDefinedAndNonNull('ciphers')
    || options.isDefinedAndNonNull('rejectUnauthorized')) {
 
-    if (isNodeV4) {
-      throw new Error('Client side certificates are not supported on Node 0.4.x');
-    }
-
     if (options.isDefinedAndNonNull('pfx')) requestOptions.pfx = options.value.pfx;
     if (options.isDefinedAndNonNull('key')) requestOptions.key = options.value.key;
     if (options.isDefinedAndNonNull('passphrase')) requestOptions.passphrase = options.value.passphrase;
@@ -585,10 +566,7 @@ function initAsClient(address, protocols, options) {
     }
   }
 
-  if (isNodeV4) {
-    requestOptions.path = (serverUrl.pathname || '/') + (serverUrl.search || '');
-  }
-  else requestOptions.path = serverUrl.path || '/';
+  requestOptions.path = serverUrl.path || '/';
 
   if (agent) {
     requestOptions.agent = agent;
@@ -605,27 +583,28 @@ function initAsClient(address, protocols, options) {
   var self = this;
   var req = httpObj.request(requestOptions);
 
-  (isNodeV4 ? agent : req).on('error', function(error) {
+  req.on('error', function(error) {
     self.emit('error', error);
     cleanupWebsocketResources.call(this, error);
   });
-  (isNodeV4 ? agent : req).once('response', function(res) {
+
+  req.once('response', function(res) {
     var error = new Error('unexpected server response (' + res.statusCode + ')');
     self.emit('error', error);
     cleanupWebsocketResources.call(this, error);
   });
-  (isNodeV4 ? agent : req).once('upgrade', function(res, socket, upgradeHead) {
+  req.once('upgrade', function(res, socket, upgradeHead) {
     if (self.readyState == WebSocket.CLOSED) {
       // client closed before server accepted connection
       self.emit('close');
-      removeAllListeners(self);
+      self.removeAllListeners();
       socket.end();
       return;
     }
     var serverKey = res.headers['sec-websocket-accept'];
     if (typeof serverKey == 'undefined' || serverKey !== expectedServerKey) {
       self.emit('error', 'invalid server key');
-      removeAllListeners(self);
+      self.removeAllListeners();
       socket.end();
       return;
     }
@@ -642,7 +621,7 @@ function initAsClient(address, protocols, options) {
     }
     if (protError) {
         self.emit('error', protError);
-        removeAllListeners(self);
+        self.removeAllListeners();
         socket.end();
         return;
     } else if (serverProt) {
@@ -652,7 +631,7 @@ function initAsClient(address, protocols, options) {
     establishConnection.call(self, Receiver, Sender, socket, upgradeHead);
 
     // perform cleanup on http resources
-    removeAllListeners(isNodeV4 ? agent : req);
+    req.removeAllListeners();
     req = null;
     agent = null;
   });
@@ -797,7 +776,7 @@ function cleanupWebsocketResources(error) {
   if (emitClose) this.emit('close', this._closeCode || 1000, this._closeMessage || '');
 
   if (this._socket) {
-    removeAllListeners(this._socket);
+    this._socket.removeAllListeners();
     // catch all socket error after removing all standard handlers
     var socket = this._socket;
     this._socket.on('error', function() {
@@ -811,23 +790,14 @@ function cleanupWebsocketResources(error) {
     this._socket = null;
   }
   if (this._sender) {
-    removeAllListeners(this._sender);
+    this._sender.removeAllListeners();
     this._sender = null;
   }
   if (this._receiver) {
     this._receiver.cleanup();
     this._receiver = null;
   }
-  removeAllListeners(this);
+  this.removeAllListeners();
   this.on('error', function() {}); // catch all errors after this
   delete this._queue;
-}
-
-function removeAllListeners(instance) {
-  if (isNodeV4) {
-    // node v4 doesn't *actually* remove all listeners globally,
-    // so we do that instead
-    instance._events = {};
-  }
-  else instance.removeAllListeners();
 }
