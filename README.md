@@ -38,8 +38,8 @@ Web VNC client integrating noVNC with Node.js and iWebPP.io
        VNC                   Proxy URL(please open it on browser)
        192.168.1.1:5900        https://41c522dab4ae47f9.vurl.iwebpp.com:51688/vtoken/516c97b3070de2e1/peervnc
 
-    4. run over STUN with iwebpp.io-stun-proxy, just embed 'local.' as sub-domain in origin vURL, 
-       like https://41c522dab4ae47f9.vurl.local.iwebpp.com:51688/vtoken/516c97b3070de2e1/peervnc
+    4. run over STUN with iwebpp.io-stun-proxy, just embed 'vlocal.' as sub-domain in origin vURL, 
+       like https://41c522dab4ae47f9.vurl.vlocal.iwebpp.com:51688/vtoken/516c97b3070de2e1/peervnc
 
 <br/>
 ### License
