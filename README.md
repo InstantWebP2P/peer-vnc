@@ -12,10 +12,14 @@ Web VNC client integrating noVNC with Node.js and iWebPP.io
 * Provide end-to-end security
 * Run over STUN session with iwebpp.io-stun-proxy
 
-### Install
+### Install manually
 * npm install peer-vnc, or git clone https://github.com/InstantWebP2P/peer-vnc.git && cd peer-vnc && npm install
 * peer-vnc depend on node-httpp, please npm install httpp-binary.if the binay didn't work, just build it from source:
   https://github.com/InstantWebP2P/node-httpp
+
+### Install with prebuilt packages, just download and unzip it
+* windows package - https://github.com/InstantWebP2P/peer-vnc/archive/pkg-release-windows.zip
+* OSx package - https://github.com/InstantWebP2P/peer-vnc/archive/pkg-release-osx.zip
 
 ### Usage/API:
 
