@@ -1,4 +1,4 @@
-## iWebPP.io - Run Peer and P2P Web Service.
+## iWebPP.io - Run Peer and P2P Web Service
 
 
 
