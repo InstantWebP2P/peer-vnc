@@ -20,6 +20,8 @@ Web VNC client integrating noVNC with Node.js and iWebPP.io
 ### Install with prebuilt packages, just download and unzip it
 * windows package - https://github.com/InstantWebP2P/peer-vnc/archive/pkg-release-windows.zip
 * OSx package - https://github.com/InstantWebP2P/peer-vnc/archive/pkg-release-osx.zip
+* RPI package - https://github.com/InstantWebP2P/peer-vnc/archive/pkg-release-rpi.zip
+* Linux package - TBD
 
 ### Usage/API:
 
