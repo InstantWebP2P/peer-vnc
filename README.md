@@ -48,8 +48,8 @@ Web VNC client integrating noVNC with Node.js and iWebPP.io
        like https://41c522dab4ae47f9.vurl.vlocal.iwebpp.com:51688/vtoken/516c97b3070de2e1/peervnc
 
 ### Support us
-*donate code
-*  donate coffee https://gumroad.com/l/iwebpp
+* donate code
+* donate coffee https://gumroad.com/l/iwebpp
 
 <br/>
 ### License
