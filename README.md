@@ -1,7 +1,7 @@
 #peer-vnc
 ==========
 
-Web VNC client integrating noVNC with Node.js and iWebPP.io
+Access to VNC desktop from anywhere using web browser
 
 ### Features
 
