@@ -22,7 +22,7 @@ var Debug = 0;
 // -    vncs: array of VNC server host:port pair, like ['localhost:5900', '51dese.com:5901'}] 
 // -      fn: callback to pass proxy informations
 // - options: user custom parameters, like {usrkey: ..., domain: ..., endpoints: ..., turn: ...}
-var Proxy = module.exports = function(vncs, fn, options){ 
+var Proxy = module.exports = function(vncs, fn, options){
     var self = this;
        
     if (!(this instanceof Proxy)) return new Proxy(vncs, fn, options);
@@ -32,6 +32,9 @@ var Proxy = module.exports = function(vncs, fn, options){
     // 1.
     // proxy URLs
     self.proxyURL = {}; // vURL for VNC server
+    
+    // websocket proxy servers
+    self.proxyWss = {};
     
     // 2.
     // create name client
@@ -67,37 +70,17 @@ var Proxy = module.exports = function(vncs, fn, options){
 	    // 3.
 	    // setup noVNC proxy
 	    for (var idx = 0; idx < vncs.length; idx ++) {
-	        var vncstrs = vncs[idx].split(':');
-	        var vnchost = vncstrs[0];
-	        var vncport = vncstrs[1] || 5900; // default VNC port
-	    
-	        // assume vncserver listen on 5900 above
-	        vncport = (vncport < 5900) ? 5900 + vncport : vncport;
-	        
-	        // create ws server to proxy VNC/RFB data
-	        var wspath = '/'+vnchost+'-'+vncport;
-	        var vncwss = new WebSocketServer({httpp: true, server: nmcln.bsrv.srv, path: wspath});
-	        
-	        vncwss.on('connection', noVNC.tcpProxy({host: vnchost, port: vncport}));
-	        
-	        self.proxyURL[vncs[idx]] = nmcln.vurl + wspath;
-	        
-	        // 3.1
-	        // report peer-service
-	        // like {vurl:x,cate:x,name:x,desc:x,tags:x,acls:x,accounting:x,meta:x}
-	        nmcln.reportService({
-	            vurl: self.proxyURL[vncs[idx]],
-	            cate: 'peer-vnc',
-	            name: 'vnc'+idx,
-	            meta: {
-                        vnchost: vnchost === 'localhost' ? OS.hostname() : vnchost,
-                        vncport: vncport
-                    }
-	        });
-	        
-	        // 3.2
-	        // update peer-service: connection loss, etc
-	        // TBD...
+	    	var vncstrs = vncs[idx].split(':');
+	    	var vnchost = vncstrs[0];
+	    	var vncport = vncstrs[1] ? 
+	    			      parseInt(vncstrs[1], 10) : 
+	    			      5900; // default VNC port
+
+	    	// assume vncserver listen on 5900 above
+	    	vncport = (vncport < 5900) ? 5900 + vncport : vncport;
+
+	    	// add VNC host proxy entry
+	    	self.addVNC({host: vnchost, port: vncport});
 	    }
 	    
 	    // 4.
@@ -160,6 +143,85 @@ var Proxy = module.exports = function(vncs, fn, options){
 	    console.log('name-client create failed:'+JSON.stringify(err));
 	    fn(err);
 	});
+};
+
+// add VNC host:port entry
+// - vnc: {host: x, port: x}
+Proxy.prototype.addVNC = function(vnc) {
+    var self = this;
+    
+    
+    // 0.
+    // check vnc host/port
+    if (!(vnc && 
+    	 (typeof vnc.host === 'string') && 
+    	 (typeof vnc.port === 'number'))) {
+        console.log('invalid VNC host '+JSON.stringify(vnc));
+        return self;
+    }
+    
+    // 1.
+    // create ws server to proxy VNC/RFB data
+    var vncstr = vnc.host+':'+vnc.port;
+	var wspath = '/'+vnc.host+'-'+vnc.port;
+	var vncwss = new WebSocketServer({httpp: true, server: self.nmcln.bsrv.srv, path: wspath});
+	
+	vncwss.on('connection', noVNC.tcpProxy({host: vnc.host, port: vnc.port}));
+
+	self.proxyWss[vncstr] = vncwss;
+	self.proxyURL[vncstr] = self.nmcln.vurl + wspath;
+		
+	// 2.
+	// report peer-service
+	// like {vurl:x,cate:x,name:x,desc:x,tags:x,acls:x,accounting:x,meta:x}
+	self.nmcln.reportService({
+		vurl: self.proxyURL[vncstr],
+		cate: 'peer-vnc',
+		name: 'vnc'+Object.keys(self.proxyWss).length,
+		meta: {
+				vnchost: vnc.host === 'localhost' ? OS.hostname() : vnc.host,
+				vncport: vnc.port
+			}
+	});
+	
+	// 3.
+	// update peer-service: connection loss, etc
+	// TBD...
+	
+	return self;
+};
+
+// remove VNC host:port entry
+// - vnc: {host: x, port: x}
+Proxy.prototype.removeVNC = function(vnc) {
+    var self = this;
+    
+    
+    // 0.
+    // check vnc host/port
+    if (!(vnc && 
+    	 (typeof vnc.host === 'string') && 
+    	 (typeof vnc.port === 'number'))) {
+        console.log('invalid VNC host '+JSON.stringify(vnc));
+        return self;
+    }
+    
+    // 1.
+    // close websocket proxy server
+    var vncstr = vnc.host+':'+vnc.port;
+    
+    if (self.proxyWss[vncstr]) {
+    	self.proxyWss[vncstr].close();
+
+    	// 2.
+    	// remove proxy URL after 2s
+    	setTimeout(function(){
+    		self.proxyWss[vncstr] = null;
+    		self.proxyURL[vncstr] = null;
+    	}, 2000);
+    }
+
+    return self;
 };
 
 // simple test 
