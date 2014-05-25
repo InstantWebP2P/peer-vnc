@@ -154,6 +154,7 @@ var Proxy = module.exports = function(vncs, fn, options){
 
 // add VNC host:port entry
 // - vnc: {host: x, port: x}
+// - return proxy vURL
 Proxy.prototype.addVNC = function(vnc) {
     var self = this;
     
@@ -194,13 +195,13 @@ Proxy.prototype.addVNC = function(vnc) {
 	// 3.
 	// update peer-service: connection loss, etc
 	// TBD...
-	
-	return self;
+	    
+	return self.proxyURL[vncstr];
 };
 
 // remove VNC host:port entry
 // - vnc: {host: x, port: x}
-Proxy.prototype.removeVNC = function(vnc) {
+Proxy.prototype.removeVNC = function(vnc, fn) {
     var self = this;
     
     
@@ -227,7 +228,7 @@ Proxy.prototype.removeVNC = function(vnc) {
     		self.proxyURL[vncstr] = null;
     	}, 2000);
     }
-
+    
     return self;
 };
 
