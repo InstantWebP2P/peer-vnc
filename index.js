@@ -27,6 +27,13 @@ var Proxy = module.exports = function(vncs, fn, options){
        
     if (!(this instanceof Proxy)) return new Proxy(vncs, fn, options);
     
+    // check arguments
+    if (typeof vncs === 'function') {
+        options = fn || {};
+        fn = vncs;
+        vncs = [];
+    } 
+    
     if (!Array.isArray(vncs)) vncs = [vncs];
         
     // 1.
