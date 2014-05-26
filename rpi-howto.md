@@ -1,6 +1,6 @@
-1. Install tightVNC on OSx: http://tightvnc.com/download.php
+1. Install tightVNC on Pi: sudo apt-get install  tightvncserver 
 
-2. Start tightVNC on a port like 5901, and set VNC admin/view password
+2. Start tightVNC server and set VNC admin/view password:  tightvncserver && tightvncpasswd
 
 3. Start peer-vnc: ./bin/rpi/node ./bin/peer-vnc -t localhost:5901 -k anywords will show a URL
 
