@@ -701,7 +701,9 @@ init_msg = function() {
             types = ws.rQshiftBytes(num_types);
             Util.Debug("Server security types: " + types);
             for (i=0; i < types.length; i+=1) {
-                if ((types[i] > rfb_auth_scheme) && (types[i] <= 16 || types[i] == 22)) {
+	        /// disable tightVNC auth scheme by tom zhou on 2014.05.26
+                ///if ((types[i] > rfb_auth_scheme) && (types[i] <= 16 || types[i] == 22)) {
+		if ((types[i] > rfb_auth_scheme) && (types[i] < 3)) {
                     rfb_auth_scheme = types[i];
                 }
             }
@@ -774,6 +776,8 @@ init_msg = function() {
                 ws.send(response);
                 updateState('SecurityResult');
                 return;
+	    /// disable tightVNC auth type
+	    /*
             case 16: // TightVNC Security Type
                 if (ws.rQwait("num tunnels", 4)) { return false; }
                 var numTunnels = ws.rQshift32();
@@ -835,7 +839,7 @@ init_msg = function() {
                 }
 
 
-                return;
+                return;*/
             default:
                 fail("Unsupported auth scheme: " + rfb_auth_scheme);
                 return;
