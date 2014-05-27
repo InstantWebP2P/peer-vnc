@@ -1,7 +1,7 @@
 #peer-vnc
 ==========
 
-Web VNC client integrating noVNC with Node.js and iWebPP.io
+Access to VNC desktop from anywhere using web browser
 
 ### Features
 
@@ -20,6 +20,8 @@ Web VNC client integrating noVNC with Node.js and iWebPP.io
 ### Install with prebuilt packages, just download and unzip it
 * windows package - https://github.com/InstantWebP2P/peer-vnc/archive/pkg-release-windows.zip
 * OSx package - https://github.com/InstantWebP2P/peer-vnc/archive/pkg-release-osx.zip
+* RPI package - https://github.com/InstantWebP2P/peer-vnc/archive/pkg-release-rpi.zip
+* Linux package - TBD
 
 ### Usage/API:
 
@@ -46,9 +48,8 @@ Web VNC client integrating noVNC with Node.js and iWebPP.io
        like https://41c522dab4ae47f9.vurl.vlocal.iwebpp.com:51688/vtoken/516c97b3070de2e1/peervnc
 
 ### Support us
-* donate code
+* donate code, bug report, test case
 * donate coffee https://gumroad.com/l/iwebpp
-
 
 <br/>
 ### License
