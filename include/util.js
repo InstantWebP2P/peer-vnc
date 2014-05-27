@@ -57,6 +57,34 @@ if (!Array.prototype.map)
   };
 }
 
+// IE <9 does not support indexOf
+//This prototype is provided by the Mozilla foundation and
+//is distributed under the MIT license.
+//http://www.ibiblio.org/pub/Linux/LICENSES/mit.license
+if (!Array.prototype.indexOf)
+{
+  Array.prototype.indexOf = function(elt /*, from*/)
+  {
+    var len = this.length >>> 0;
+
+    var from = Number(arguments[1]) || 0;
+    from = (from < 0)
+         ? Math.ceil(from)
+         : Math.floor(from);
+    if (from < 0)
+      from += len;
+
+    for (; from < len; from++)
+    {
+      if (from in this &&
+          this[from] === elt)
+        return from;
+    }
+    return -1;
+  };
+}
+
+
 // 
 // requestAnimationFrame shim with setTimeout fallback
 //
@@ -202,6 +230,14 @@ Util.conf_defaults = function(cfg, api, defaults, arr) {
     }
 };
 
+/*
+ * Decode from UTF-8
+ */
+Util.decodeUTF8 = function(utf8string) {
+    return decodeURIComponent(escape(utf8string));
+}
+
+
 
 /*
  * Cross-browser routines
@@ -266,18 +302,72 @@ Util.load_scripts = function(files) {
     }
 }
 
+
 // Get DOM element position on page
-Util.getPosition = function (obj) {
-    var x = 0, y = 0;
-    if (obj.offsetParent) {
+//  This solution is based based on http://www.greywyvern.com/?post=331
+//  Thanks to Brian Huisman AKA GreyWyvern!
+Util.getPosition = (function() {
+    function getStyle(obj, styleProp) {
+        if (obj.currentStyle) {
+            var y = obj.currentStyle[styleProp];
+        } else if (window.getComputedStyle)
+            var y = window.getComputedStyle(obj, null)[styleProp];
+        return y;
+    };
+
+    function scrollDist() {
+        var myScrollTop = 0, myScrollLeft = 0;
+        var html = document.getElementsByTagName('html')[0];
+
+        // get the scrollTop part
+        if (html.scrollTop && document.documentElement.scrollTop) {
+            myScrollTop = html.scrollTop;
+        } else if (html.scrollTop || document.documentElement.scrollTop) {
+            myScrollTop = html.scrollTop + document.documentElement.scrollTop;
+        } else if (document.body.scrollTop) {
+            myScrollTop = document.body.scrollTop;
+        } else {
+            myScrollTop = 0;
+        }
+
+        // get the scrollLeft part
+        if (html.scrollLeft && document.documentElement.scrollLeft) {
+            myScrollLeft = html.scrollLeft;
+        } else if (html.scrollLeft || document.documentElement.scrollLeft) {
+            myScrollLeft = html.scrollLeft + document.documentElement.scrollLeft;
+        } else if (document.body.scrollLeft) {
+            myScrollLeft = document.body.scrollLeft;
+        } else {
+            myScrollLeft = 0;
+        }
+
+        return [myScrollLeft, myScrollTop];
+    };
+
+    return function (obj) {
+        var curleft = 0, curtop = 0, scr = obj, fixed = false;
+        while ((scr = scr.parentNode) && scr != document.body) {
+            curleft -= scr.scrollLeft || 0;
+            curtop -= scr.scrollTop || 0;
+            if (getStyle(scr, "position") == "fixed") {
+                fixed = true;
+            }
+        }
+        if (fixed && !window.opera) {
+            var scrDist = scrollDist();
+            curleft += scrDist[0];
+            curtop += scrDist[1];
+        }
+
         do {
-            x += obj.offsetLeft;
-            y += obj.offsetTop;
-            obj = obj.offsetParent;
-        } while (obj);
-    }
-    return {'x': x, 'y': y};
-};
+            curleft += obj.offsetLeft;
+            curtop += obj.offsetTop;
+        } while (obj = obj.offsetParent);
+
+        return {'x': curleft, 'y': curtop};
+    };
+})();
+
 
 // Get mouse event position in DOM element
 Util.getEventPosition = function (e, obj, scale) {

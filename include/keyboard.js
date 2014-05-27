@@ -18,13 +18,13 @@ var kbdUtil = (function() {
     };
 
     function isMac() {
-        return navigator && !!(/macintosh/i).exec(navigator.appVersion);
+        return navigator && !!(/mac/i).exec(navigator.platform);
     }
     function isWindows() {
-        return navigator && !!(/windows/i).exec(navigator.appVersion);
+        return navigator && !!(/win/i).exec(navigator.platform);
     }
     function isLinux() {
-        return navigator && !!(/linux/i).exec(navigator.appVersion);
+        return navigator && !!(/linux/i).exec(navigator.platform);
     }
 
     // Return true if a modifier which is not the specified char modifier (and is not shift) is down
@@ -152,11 +152,14 @@ var kbdUtil = (function() {
     // Get a key ID from a keyboard event
     // May be a string or an integer depending on the available properties
     function getKey(evt){
-        if (evt.key) {
-            return evt.key;
+        if ('keyCode' in evt && 'key' in evt) {
+            return evt.key + ':' + evt.keyCode;
+        }
+        else if ('keyCode' in evt) {
+            return evt.keyCode;
         }
         else {
-            return evt.keyCode;
+            return evt.key;
         }
     }
 
@@ -170,7 +173,10 @@ var kbdUtil = (function() {
         else if (evt.charCode) {
             codepoint = evt.charCode;
         }
-
+        else if (evt.keyCode && evt.type === 'keypress') {
+            // IE10 stores the char code as keyCode, and has no other useful properties
+            codepoint = evt.keyCode;
+        }
         if (codepoint) {
             var res = keysyms.fromUnicode(substituteCodepoint(codepoint));
             if (res) {
