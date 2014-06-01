@@ -60,17 +60,25 @@ exports.sep_opc_vurl_info_answer = exports.SEP_OPC_VURL_INFO_ANSWER = 27;
 exports.sep_opc_srv_query_offer  = exports.SEP_OPC_SRV_QUERY_OFFER  = 28;
 exports.sep_opc_srv_query_answer = exports.SEP_OPC_SRV_QUERY_ANSWER = 29;
 
+// Heart-beat opcode:
+exports.sep_opc_heart_beat_offer  = exports.SEP_OPC_HEART_BEAT_OFFER  = 30;
+exports.sep_opc_heart_beat_answer = exports.SEP_OPC_HEART_BEAT_ANSWER = 31;
+
+
 // SEP answer state
 exports.sep_opc_state_ready = exports.SEP_OPC_STATE_READY = 0;
 exports.sep_opc_state_fail  = exports.SEP_OPC_STATE_FAIL  = 1;
+
 
 // Peer connection mode: c/s vs p2p
 exports.sep_mode_cs = exports.SEP_MODE_CS = 0;
 exports.sep_mode_pp = exports.SEP_MODE_PP = 1;
 
+
 // Peer session mode: TURN or STUN
 exports.sep_sesn_stun = exports.SEP_SESN_STUN = 0;
 exports.sep_sesn_turn = exports.SEP_SESN_TURN = 1;
+
 
 // Peer secure mode, level-based
 // supported secure mode:
@@ -86,6 +94,7 @@ exports.sep_sec_none              = exports.SEP_SEC_NONE              = 0;
 exports.sep_sec_ssl               = exports.SEP_SEC_SSL               = 1;
 exports.sep_sec_ssl_acl_host      = exports.SEP_SEC_SSL_ACL_HOST      = 2;
 exports.sep_sec_ssl_acl_host_port = exports.SEP_SEC_SSL_ACL_HOST_PORT = 3;
+
 
 // Server URL control path prefix
 exports.sep_ctrlpath_ns = exports.SEP_CTRLPATH_NS = '/ctrlpathns'; // name server, reserved
