@@ -21,7 +21,8 @@ Access to VNC desktop from anywhere using web browser
 * windows package - https://github.com/InstantWebP2P/peer-vnc/archive/pkg-release-windows.zip
 * OSx package - https://github.com/InstantWebP2P/peer-vnc/archive/pkg-release-osx.zip
 * RPI package - https://github.com/InstantWebP2P/peer-vnc/archive/pkg-release-rpi.zip
-* Linux package - TBD
+* Linux X86_64 package - https://github.com/InstantWebP2P/peer-vnc/archive/pkg-release-linux64.zip
+* Linux X86 package - https://github.com/InstantWebP2P/peer-vnc/archive/pkg-release-linux32.zip
 
 ### Usage/API:
 
