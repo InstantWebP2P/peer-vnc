@@ -108,9 +108,8 @@ var Proxy = module.exports = function(vncs, fn, options){
 	    
 	    // 5.1
 	    // handle http CONNECT request in case come from forward proxy
-        // notes: the idea is see https request/websocket proxy as reverse proxy to destination http website,
-        // so, create connection to peer-vnc httpps server self.
-	    nmcln.bsrv.srv.on('connect', function(req, socket, head){
+        // !!! just create connection to peer-vnc httpps server self.
+	    nmcln.bsrv.srv.on('connect', function(req, socket, head) {
             var roptions = {
 			        port: nmcln.port,
 			        host: nmcln.ipaddr,
@@ -118,8 +117,15 @@ var Proxy = module.exports = function(vncs, fn, options){
                     addr: nmcln.ipaddr
                 }
 	        };
-		        
-            if (Debug) console.log('http tunnel proxy, connect to self %s:%d', nmcln.ipaddr, nmcln.port);
+            
+            // check req.url
+            if (!(req.url && nmcln.vurl.match((req.url.split(':'))[0]))) {
+                console.log('invalid proxed url: '+req.url);
+                socket.end();
+                return;
+            }
+            
+            if (Debug) console.log('http tunnel proxy, connect to self %s:%d for %s', nmcln.ipaddr, nmcln.port, req.url);
             
             var srvSocket = UDT.connect(roptions, function() {
                 if (Debug) console.log('http tunnel proxy, got connected!');   
