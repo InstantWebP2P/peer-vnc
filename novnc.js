@@ -90,8 +90,8 @@ var tcpProxy = module.exports.tcpProxy = function(vnc){
                         if (!ws.send(data, {binary: true})) {
                             ts.pause();
                         
-                            ws.on('drain', function(){
-                                ts.resume();
+                            ws.once('drain', function(){
+                            	if (ts && ts.resume) ts.resume();
                             });
                          
                             setTimeout(function(){
@@ -102,12 +102,12 @@ var tcpProxy = module.exports.tcpProxy = function(vnc){
                         if (!ws.send(data.toString('base64'), {binary: false})) {
                             ts.pause();
                         
-                            ws.on('drain', function(){
-                                ts.resume();
+                            ws.once('drain', function(){
+                            	if (ts && ts.resume) ts.resume();
                             });
                         
                             setTimeout(function(){
-                                ts.resume();
+                            	if (ts && ts.resume) ts.resume();
                             }, 100); // 100ms 
                         }
                     }
