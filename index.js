@@ -66,7 +66,10 @@ var Proxy = module.exports = function(vncs, fn, options){
         
         // secure mode
         secmode: (options && options.secmode === 'ssl') ? WEBPP.SEP.SEP_SEC_SSL :
-                                                          WEBPP.SEP.SEP_SEC_SSL_ACL_HOST
+                                                          WEBPP.SEP.SEP_SEC_SSL_ACL_HOST,
+        // ssl mode
+        sslmode: (options && options.sslmode === 'srv') ? WEBPP.SEP.SEP_SSL_AUTH_SRV_ONLY :
+                                                          WEBPP.SEP.SEP_SSL_AUTH_SRV_CLNT
     });
 	
 	// 2.1

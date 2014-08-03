@@ -60,11 +60,11 @@ var tcpProxy = module.exports.tcpProxy = function(vnc){
                         ws.pause();
                     
                         ts.once('drain', function(){
-                            if (ws && (ws.readyState == ws.OPEN)) ws.resume();
+                            if (ws && (ws.readyState === ws.OPEN)) ws.resume();
                         });
                     
                         setTimeout(function(){
-                            if (ws && (ws.readyState == ws.OPEN)) ws.resume();
+                            if (ws && (ws.readyState === ws.OPEN)) ws.resume();
                         }, 100); // 100ms 
                     }
                 } catch (e) {
