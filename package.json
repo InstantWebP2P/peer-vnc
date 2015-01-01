@@ -22,10 +22,11 @@
     "peer-vnc": "./bin/peer-vnc"
   },
   "dependencies": {
-    "iwebpp.io": "latest",
-    "wspp": "latest",
-    "connect": "2.8.x",
     "commander": "~1.1.1",
-    "optimist": "0.3.x"
+    "connect": "2.8.x",
+    "iwebpp.io": "latest",
+    "optimist": "0.3.x",
+    "qrcode-terminal": "^0.9.5",
+    "wspp": "latest"
   }
 }
