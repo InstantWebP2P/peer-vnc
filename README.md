@@ -21,7 +21,8 @@ Access to VNC desktop from anywhere using web browser
 * windows package - https://github.com/InstantWebP2P/peer-vnc/archive/pkg-release-windows.zip
 * OSx package - https://github.com/InstantWebP2P/peer-vnc/archive/pkg-release-osx.zip
 * RPI package - https://github.com/InstantWebP2P/peer-vnc/archive/pkg-release-rpi.zip
-* Linux package - TBD
+* Linux X86_64 package - https://github.com/InstantWebP2P/peer-vnc/archive/pkg-release-linux64.zip
+* Linux X86 package - https://github.com/InstantWebP2P/peer-vnc/archive/pkg-release-linux32.zip
 
 ### Usage/API:
 
@@ -40,7 +41,7 @@ Access to VNC desktop from anywhere using web browser
        VNC                   Proxy URL(please open it on browser)
        192.168.1.1:5900        https://af5e83731df02546.vurl.iwebpp.com:51688/vtoken/bb39fb0eb29f081e/peervnc
        
-    3. use peer-vnc binary on Linux, like  ./bin/peer-vnc -t 192.168.1.1:5900
+    3. use peer-vnc binary on Linux, like  ./bin/peer-vnc -t 192.168.1.1:5900 -s acl -a srv
        VNC                   Proxy URL(please open it on browser)
        192.168.1.1:5900        https://41c522dab4ae47f9.vurl.iwebpp.com:51688/vtoken/516c97b3070de2e1/peervnc
 
