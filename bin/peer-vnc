@@ -15,21 +15,23 @@ var help = [
     "Starts a peer-vnc server using the specified command-line options",
     "",
     "options:",
-    "  -t, --target  localhost:5900,localhost:5901  Host:port pairs of VNC server, the multiple VNC separate by comma",
-    "  -k, --key     User key                       Key for the registered user on ivncbox.com",
-    "  -s  --secmode ssl or acl                     Secure mode: ssl or host-based ACL",
-    "  -u, --user    USER                           User to drop privileges once server socket is bound",
-    "  -h, --help                                   You're staring at it"
+    "  -t, --target   localhost:5900,localhost:5901  Host:port pairs of VNC server, the multiple VNC separate by comma",
+    "  -k, --key      User key                       Key for the registered user on ivncbox.com",
+    "  -s  --secmode  ssl or acl                     Secure mode: ssl or host-based ACL",
+    "  -a  --authmode srv or both                    SSL auth mode: srv or both",
+    "  -u, --user     USER                           User to drop privileges once server socket is bound",
+    "  -h, --help                                    You're staring at it"
 ].join('\n');
 
 if (argv.h || argv.help || Object.keys(argv).length === 2) {
   return util.puts(help);
 }
 
-var target  = argv.t || argv.target,
-    usrkey  = argv.k || argv.key,
-    secmode = argv.s || argv.secmode,
-    user    = argv.u || argv.user;
+var target   = argv.t || argv.target,
+    usrkey   = argv.k || argv.key,
+    secmode  = argv.s || argv.secmode,
+    authmode = argv.a || argv.authmode,
+    user     = argv.u || argv.user;
 
 //
 // Check target VNC server
@@ -44,6 +46,10 @@ if (target) {
 
 if (secmode) {
     options.secmode = secmode;
+}
+
+if (authmode) {
+    options.sslmode = authmode;
 }
 
 if (usrkey) {
