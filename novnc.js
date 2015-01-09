@@ -4,7 +4,8 @@
 var Connect = require('connect'),
     Net = require('net'),
     Buffer = require('buffer').Buffer,
-    Fs = require('fs');
+    Fs = require('fs'),
+    WSS = require('wspp').Stream;
 
 
 // Debug level
@@ -42,98 +43,33 @@ var tcpProxy = module.exports.tcpProxy = function(vnc){
     vnc.port = vnc.port || 5900;
     
     return function(ws){
-        // create tcp connection to VNC server        
-        var ts = Net.connect(vnc, function(){
-            if (Debug) console.log('tcp connection...');
-            
-            // relay data from ws to tcp
-            ws.on('message', function(data, flags){
-                if (flags.binary) {
-                    if (Debug) console.log('binary ws message');
-                } else {
-                    data = new Buffer(data);
-                }
-                if (Debug) console.log('ws.onmessage...'+data.length);
-               
-                try { 
-                    if (!ts.write(data)) {
-                        ws.pause();
-                    
-                        ts.once('drain', function(){
-                            if (ws && (ws.readyState === ws.OPEN)) ws.resume();
-                        });
-                    
-                        setTimeout(function(){
-                            if (ws && (ws.readyState === ws.OPEN)) ws.resume();
-                        }, 100); // 100ms 
-                    }
-                } catch (e) {
-                    if (Debug) console.log('ws2ts send error '+e);
-                    ws.close();
-                }
-            });
-            ws.on('close', function(){
-                if (Debug) console.log('ws.onclose...');
-                ts.end();
-            });
-            ws.on('error', function(){
-                if (Debug) console.log('ws.onerror...');
-                ts.end();
-            });
-            
-            // relay data from tcp to ws
-            ts.on('data', function(data){
-                if (Debug) console.log('ts.ondata...'+data.length);
-                
-                try { 
-                    if (ws.supports.binary) {
-                        if (!ws.send(data, {binary: true})) {
-                            ts.pause();
-                        
-                            ws.once('drain', function(){
-                            	if (ts && ts.resume) ts.resume();
-                            });
-                         
-                            setTimeout(function(){
-                                if (ts && ts.resume) ts.resume();
-                            }, 100); // 100ms 
-                        }
-                    } else {                    
-                        if (!ws.send(data.toString('base64'), {binary: false})) {
-                            ts.pause();
-                        
-                            ws.once('drain', function(){
-                            	if (ts && ts.resume) ts.resume();
-                            });
-                        
-                            setTimeout(function(){
-                            	if (ts && ts.resume) ts.resume();
-                            }, 100); // 100ms 
-                        }
-                    }
-                } catch (e) {
-                    if (Debug) console.log('ts2ws send error '+e);
-                    ts.end();
-                }
-            });
-            ts.on('end', function(){
-                if (Debug) console.log('ts.onend...');
-                ws.close();
-            });
-            ts.on('close', function(){
-                if (Debug) console.log('ts.onclose...');
-                ws.close();
-            });
-            ts.on('error', function(){
-                if (Debug) console.log('ts.onerror...');
-                ws.close();
-            });
-        });
-        
-        ts.on('error', function(err){
-            if (Debug) console.log('tcp connection error '+err);
-            ws.close();
-        });
+    	// create tcp connection to VNC server        
+    	var ts = Net.connect(vnc, function(){
+    		if (Debug) console.log('tcp connection...');
+
+    		// wrap stream on ws
+    		var wss = new WSS(ws);
+
+    		// pipe each other
+    		wss.pipe(ts);
+    		ts.pipe(wss);
+
+    		// check error
+    		wss.on('error', function(){
+    			if (Debug) console.log('ws.onerror...');
+    			ts.end();
+    		});
+    	});
+
+    	// check error
+    	ws.on('error', function(){
+    		if (Debug) console.log('ws.onerror...');
+    		ts.end();
+    	});
+    	ts.on('error', function(err){
+    		if (Debug) console.log('tcp connection error '+err);
+    		ws.close();
+    	});
     };
 };
 
