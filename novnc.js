@@ -42,6 +42,8 @@ var tcpProxy = module.exports.tcpProxy = function(vnc){
     vnc.host = vnc.host || 'localhost';
     vnc.port = vnc.port || 5900;
     
+	if (Debug) console.log('connect to vnc %j ...', vnc);
+
     return function(ws){
     	// create tcp connection to VNC server        
     	var ts = Net.connect(vnc, function(){
