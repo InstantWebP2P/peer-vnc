@@ -27,11 +27,11 @@ webServer.use(function(req, res, next){
 });
 
 ///webServer.use(Connect.staticCache({maxLength: 256*1024, maxObjects: 8}))
-webServer.use(Connect.static(__dirname));
+webServer.use(Connect.static(__dirname+'/front'));
     
 webServer.use(function(req, res){
     res.writeHeader(200, {'content-type': 'text/html'});
-    res.end(Fs.readFileSync(__dirname+'/novnc.html'));
+    res.end(Fs.readFileSync(__dirname+'/front/novnc.html'));
 });
 
 // ws2tcp proxy
