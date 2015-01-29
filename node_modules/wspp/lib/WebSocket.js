@@ -20,6 +20,8 @@ var url = require('url')
   , Receiver = require('./Receiver')
   , SenderHixie = require('./Sender.hixie')
   , ReceiverHixie = require('./Receiver.hixie')
+  , Extensions = require('./Extensions')
+  , PerMessageDeflate = require('./PerMessageDeflate')
   , EventEmitter = require('events').EventEmitter;
 
 /**
@@ -60,13 +62,12 @@ function WebSocket(address, protocols, options) {
     protocols = [];
   }
 
-  // TODO: actually handle the `Sub-Protocols` part of the WebSocket client
-
   this._socket = null;
   this._ultron = null;
   this.bytesReceived = 0;
   this.readyState = null;
   this.supports = {};
+  this.extensions = {};
 
   if (Array.isArray(address)) {
     initAsServerClient.apply(this, address.concat(options));
@@ -124,16 +125,18 @@ WebSocket.prototype.close = function close(code, data) {
     return;
   }
 
+  var self = this;
   try {
     this.readyState = WebSocket.CLOSING;
     this._closeCode = code;
     this._closeMessage = data;
     var mask = !this._isServer;
-    this._sender.close(code, data, mask);
+    this._sender.close(code, data, mask, function(err) {
+      if (err) self.emit('error', err);
+      self.terminate();
+    });
   } catch (e) {
     this.emit('error', e);
-  } finally {
-    this.terminate();
   }
 };
 
@@ -205,7 +208,7 @@ WebSocket.prototype.resume = function resume() {
  * Sends a piece of data
  *
  * @param {Object} data to be sent to the server
- * @param {Object} Members - mask: boolean, binary: boolean
+ * @param {Object} Members - mask: boolean, binary: boolean, compress: boolean
  * @param {function} Optional callback which is executed after the send completes
  * @api public
  */
@@ -245,6 +248,7 @@ WebSocket.prototype.send = function send(data, options, cb) {
   }
 
   if (typeof options.mask === 'undefined') options.mask = !this._isServer;
+  if (typeof options.compress === 'undefined') options.compress = !!this.extensions[PerMessageDeflate.extensionName];
 
   var readable = typeof stream.Readable === 'function'
     ? stream.Readable
@@ -269,7 +273,7 @@ WebSocket.prototype.send = function send(data, options, cb) {
 /**
  * Streams data through calls to a user supplied function
  *
- * @param {Object} Members - mask: boolean, binary: boolean
+ * @param {Object} Members - mask: boolean, binary: boolean, compress: boolean
  * @param {function} 'function (error, send)' which is executed on successive ticks of which send is 'function (data, final)'.
  * @api public
  */
@@ -297,6 +301,7 @@ WebSocket.prototype.stream = function stream(options, cb) {
   options = options || {};
 
   if (typeof options.mask === 'undefined') options.mask = !this._isServer;
+  if (typeof options.compress === 'undefined') options.compress = !!this.extensions[PerMessageDeflate.extensionName];
 
   startQueue(this);
 
@@ -328,6 +333,8 @@ WebSocket.prototype.terminate = function terminate() {
   if (this.readyState === WebSocket.CLOSED) return;
 
   if (this._socket) {
+    this.readyState = WebSocket.CLOSING;
+
     // End the connection
     try { this._socket.end(); }
     catch (e) {
@@ -339,9 +346,10 @@ WebSocket.prototype.terminate = function terminate() {
     // Add a timeout to ensure that the connection is completely
     // cleaned up within 30 seconds, even if the clean close procedure
     // fails for whatever reason
-    if (this._closeTimer) {
-      clearTimeout(this._closeTimer);
-    }
+    // First cleanup any pre-existing timeout from an earlier "terminate" call,
+    // if one exists.  Otherwise terminate calls in quick succession will leak timeouts
+    // and hold the program open for `closeTimout` time.
+    if (this._closeTimer) { clearTimeout(this._closeTimer); }
     this._closeTimer = setTimeout(cleanupWebsocketResources.bind(this, true), closeTimeout);
   } else if (this.readyState === WebSocket.CONNECTING) {
     cleanupWebsocketResources.call(this, true);
@@ -497,12 +505,14 @@ function OpenEvent(target) {
 function initAsServerClient(req, socket, upgradeHead, options) {
   options = new Options({
     protocolVersion: protocolVersion,
-    protocol: null
+    protocol: null,
+    extensions: {}
   }).merge(options);
 
   // expose state properties
   this.protocol = options.value.protocol;
   this.protocolVersion = options.value.protocolVersion;
+  this.extensions = options.value.extensions;
   this.supports.binary = (this.protocolVersion !== 'hixie-76');
   this.upgradeReq = req;
   this.readyState = WebSocket.CONNECTING;
@@ -522,7 +532,7 @@ function initAsClient(address, protocols, options) {
     protocolVersion: protocolVersion,
     host: null,
     headers: null,
-    protocol: null,
+    protocol: protocols.join(','),
     agent: null,
     // ssl-related options
     pfx: null,
@@ -532,7 +542,8 @@ function initAsClient(address, protocols, options) {
     ca: null,
     ciphers: null,
     rejectUnauthorized: null,
-    
+    perMessageDeflate: false, // true -> false in default
+
     // httpp-related options
     hole: {port: -1},
     createConnection: false, // custom createConnection
@@ -551,6 +562,14 @@ function initAsClient(address, protocols, options) {
   var httpObj = options.value.httpp ? (isSecure ? httpps : httpp) : (isSecure ? https : http);
   var port = serverUrl.port || (isSecure ? 443 : 80);
   var auth = serverUrl.auth;
+
+  // prepare extensions
+  var extensionsOffer = {};
+  var perMessageDeflate;
+  if (options.value.perMessageDeflate) {
+    perMessageDeflate = new PerMessageDeflate(typeof options.value.perMessageDeflate !== true ? options.value.perMessageDeflate : {}, false);
+    extensionsOffer[PerMessageDeflate.extensionName] = perMessageDeflate.offer();
+  }
 
   // expose state properties
   this._isServer = false;
@@ -609,6 +628,10 @@ function initAsClient(address, protocols, options) {
         requestOptions.headers[header] = options.value.headers[header];
        }
     }
+  }
+
+  if (Object.keys(extensionsOffer).length) {
+    requestOptions.headers['Sec-WebSocket-Extensions'] = Extensions.format(extensionsOffer);
   }
 
   if (options.isDefinedAndNonNull('pfx')
@@ -705,6 +728,19 @@ function initAsClient(address, protocols, options) {
       self.protocol = serverProt;
     }
 
+    var serverExtensions = Extensions.parse(res.headers['sec-websocket-extensions']);
+    if (perMessageDeflate && serverExtensions[PerMessageDeflate.extensionName]) {
+      try {
+        perMessageDeflate.accept(serverExtensions[PerMessageDeflate.extensionName]);
+      } catch (err) {
+        self.emit('error', 'invalid extension parameter');
+        self.removeAllListeners();
+        socket.end();
+        return;
+      }
+      self.extensions[PerMessageDeflate.extensionName] = perMessageDeflate;
+    }
+
     establishConnection.call(self, Receiver, Sender, socket, upgradeHead);
 
     // perform cleanup on http resources
@@ -724,7 +760,7 @@ function establishConnection(ReceiverClass, SenderClass, socket, upgradeHead) {
   socket.setTimeout(0);
   socket.setNoDelay(true);
   var self = this;
-  this._receiver = new ReceiverClass();
+  this._receiver = new ReceiverClass(this.extensions);
 
   // socket cleanup handlers
   ultron.on('end', cleanupWebsocketResources.bind(this));
@@ -807,7 +843,7 @@ function establishConnection(ReceiverClass, SenderClass, socket, upgradeHead) {
   };
 
   // finalize the client
-  this._sender = new SenderClass(socket);
+  this._sender = new SenderClass(socket, this.extensions);
   this._sender.on('error', function onerror(error) {
     self.close(1002, '');
     self.emit('error', error);

@@ -47,3 +47,10 @@ WS.connect = WS.createConnection = function connect(address, fn) {
 
   return client;
 };
+
+/*
+ * Stream wrap on WebSocket
+ */
+WS.Stream = require('./lib/Stream');
+
+

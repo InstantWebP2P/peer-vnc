@@ -26,7 +26,6 @@
     "connect": "2.8.x",
     "iwebpp.io": "latest",
     "optimist": "0.3.x",
-    "qrcode-terminal": "^0.9.5",
     "wspp": "0.6.3"
   }
 }
