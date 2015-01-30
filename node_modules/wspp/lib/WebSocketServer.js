@@ -13,6 +13,8 @@ var util = require('util')
   , crypto = require('crypto')
   , Options = require('options')
   , WebSocket = require('./WebSocket')
+  , Extensions = require('./Extensions')
+  , PerMessageDeflate = require('./PerMessageDeflate')
   , tls = require('tls')
   , url = require('url');
 
@@ -34,8 +36,10 @@ function WebSocketServer(options, callback) {
     noServer: false,
     disableHixie: false,
     clientTracking: true,
+    perMessageDeflate: false, // true -> false in default
+
     httpp: false, // default as HTTP not HTTPP
-    https: false, // default as HTTP not HTTPS
+    https: false  // default as HTTP not HTTPS
   }).merge(options);
 
   if (!options.isDefinedAndNonNull('port') && !options.isDefinedAndNonNull('server') && !options.value.noServer) {
@@ -205,6 +209,9 @@ function handleHybiUpgrade(req, socket, upgradeHead, cb) {
     req.headers['sec-websocket-origin'] :
     req.headers['origin'];
 
+  // handle extensions offer
+  var extensionsOffer = Extensions.parse(req.headers['sec-websocket-extensions']);
+
   // handler to call when the connection sequence completes
   var self = this;
   var completeHybiUpgrade2 = function(protocol) {
@@ -226,6 +233,22 @@ function handleHybiUpgrade(req, socket, upgradeHead, cb) {
       headers.push('Sec-WebSocket-Protocol: ' + protocol);
     }
 
+    var extensions = {};
+    try {
+      extensions = acceptExtensions.call(self, extensionsOffer);
+    } catch (err) {
+      abortConnection(socket, 400, 'Bad Request');
+      return;
+    }
+
+    if (Object.keys(extensions).length) {
+      var serverExtensions = {};
+      Object.keys(extensions).forEach(function(token) {
+        serverExtensions[token] = [extensions[token].params]
+      });
+      headers.push('Sec-WebSocket-Extensions: ' + Extensions.format(serverExtensions));
+    }
+
     // allows external modification/inspection of handshake headers
     self.emit('headers', headers);
 
@@ -242,7 +265,8 @@ function handleHybiUpgrade(req, socket, upgradeHead, cb) {
 
     var client = new WebSocket([req, socket, upgradeHead], {
       protocolVersion: version,
-      protocol: protocol
+      protocol: protocol,
+      extensions: extensions
     });
 
     if (self.options.clientTracking) {
@@ -469,6 +493,17 @@ function handleHixieUpgrade(req, socket, upgradeHead, cb) {
 
   // no client verification required
   onClientVerified();
+}
+
+function acceptExtensions(offer) {
+  var extensions = {};
+  var options = this.options.perMessageDeflate;
+  if (options && offer[PerMessageDeflate.extensionName]) {
+    var perMessageDeflate = new PerMessageDeflate(options !== true ? options : {}, true);
+    perMessageDeflate.accept(offer[PerMessageDeflate.extensionName]);
+    extensions[PerMessageDeflate.extensionName] = perMessageDeflate;
+  }
+  return extensions;
 }
 
 function abortConnection(socket, code, name) {
