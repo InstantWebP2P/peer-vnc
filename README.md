@@ -24,6 +24,8 @@ Access to VNC desktop from anywhere using web browser
 * Linux X86_64 package - https://github.com/InstantWebP2P/peer-vnc/archive/pkg-release-linux64.zip
 * Linux X86 package - https://github.com/InstantWebP2P/peer-vnc/archive/pkg-release-linux32.zip
 
+### Discussion group: https://groups.google.com/d/forum/iwebpp
+
 ### Usage/API:
 
     1. create vnc-example.js
