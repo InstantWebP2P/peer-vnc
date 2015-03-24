@@ -22,6 +22,8 @@ var Debug = 0;
 // -    vncs: array of VNC server host:port pair, like ['localhost:5900', '51dese.com:5901'}] 
 // -      fn: callback to pass proxy informations
 // - options: user custom parameters, like {usrkey: ..., domain: ..., endpoints: ..., turn: ...}
+// - options.secmode: ssl, enable ssl/https; acl, enable ssl/https,host-based ACL
+// - options.sslmode: srv, only verify server side cert; both, verify both server and client side cert
 var Proxy = module.exports = function(vncs, fn, options){
     var self = this;
        
