@@ -56,6 +56,8 @@ if (authmode) {
 
 if (basicauth) {
     options.auth = basicauth;
+} else {
+	console.log('Warning: Please set http auth with -b username:password');
 }
 
 if (usrkey) {
