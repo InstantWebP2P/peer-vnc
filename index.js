@@ -24,7 +24,7 @@ var Debug = 0;
 // - options: user custom parameters, like {usrkey: ..., domain: ..., endpoints: ..., turn: ...}
 // - options.secmode: ssl, enable ssl/https; acl, enable ssl/https,host-based ACL
 // - options.sslmode: srv, only verify server side cert; both, verify both server and client side cert
-// -    options:auth: http basic-auth as username:password
+// -    options.auth: http basic-auth as username:password
 var Proxy = module.exports = function(vncs, fn, options){
     var self = this;
        
