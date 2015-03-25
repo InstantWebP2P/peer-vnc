@@ -7,32 +7,56 @@ var Connect = require('connect'),
     Fs = require('fs'),
     WSS = require('wspp').Stream;
 
+// authentication module
+var httpauth = require('http-auth');
 
 // Debug level
 var Debug = 0;
 
 // web server
-var webServer = module.exports.webServer = Connect();
+var webServer = module.exports.webServer = function(options) {
+	var app = Connect();
+	var auth = (options && options.auth) || false;
+	var upload = (options && options.upload) || false;
+	
+	// rewrite req.url to remove vToken string
+	var vtokenregex = /\/vtoken\/([0-9]|[a-f]){16}/gi;
 
-// rewrite req.url to remove vToken string
-var vtokenregex = /\/vtoken\/([0-9]|[a-f]){16}/gi;
+	app.use(function(req, res, next){
+	    if (vtokenregex.test(req.url)) {
+	        res.writeHead(301, {'location': req.url.replace(vtokenregex, '')});
+	        res.end();
+	    } else {
+	        next();
+	    }
+	});
 
-webServer.use(function(req, res, next){
-    if (vtokenregex.test(req.url)) {
-        res.writeHead(301, {'location': req.url.replace(vtokenregex, '')});
-        res.end();
-    } else {
-        next();
-    }
-});
+	// basic-auth middleware
+	if (auth) {
+		var basic = httpauth.basic({
+			realm: "iwebpp.com"
+		}, function (username, password, callback) {
+			callback(username === auth.username && password === auth.password);
+		});
+		
+		app.use(httpauth.connect(basic));
+	}
+	
+	// file upload middleware
+	if (upload) {
+		
+	}
 
-///webServer.use(Connect.staticCache({maxLength: 256*1024, maxObjects: 8}))
-webServer.use(Connect.static(__dirname+'/front'));
-    
-webServer.use(function(req, res){
-    res.writeHeader(200, {'content-type': 'text/html'});
-    res.end(Fs.readFileSync(__dirname+'/front/novnc.html'));
-});
+	///app(Connect.staticCache({maxLength: 256*1024, maxObjects: 8}))
+	app.use(Connect.static(__dirname+'/front'));
+	    
+	app.use(function(req, res){
+	    res.writeHeader(200, {'content-type': 'text/html'});
+	    res.end(Fs.readFileSync(__dirname+'/front/novnc.html'));
+	});
+	
+	return app;
+};
 
 // ws2tcp proxy
 // vnc: {host: ..., port: ...}, VNC server info
