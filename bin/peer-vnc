@@ -15,13 +15,13 @@ var help = [
     "Starts a peer-vnc server using the specified command-line options",
     "",
     "options:",
-    "  -t, --target    localhost:5900,localhost:5901  Host:port pairs of VNC server, the multiple VNC separate by comma",
-    "  -k, --key       User key                       Key for the registered user on ivncbox.com",
-    "  -s  --secmode   ssl or acl                     Secure mode: ssl or host-based ACL",
-    "  -a  --authmode  srv or both                    SSL auth mode: srv or both",
-    "  -b  --basicauth user:pass                      Http basic-auth as username:password",
-    "  -u, --user      USER                           User to drop privileges once server socket is bound",
-    "  -h, --help                                     You're staring at it"
+    "  -t, --target    localhost:5900,localhost:5901-5918  Host:port pairs of VNC server, the multiple VNC separate by comma",
+    "  -k, --key       User key                            Key for the registered user on ivncbox.com",
+    "  -s  --secmode   ssl or acl                          Secure mode: ssl or host-based ACL",
+    "  -a  --authmode  srv or both                         SSL auth mode: srv or both",
+    "  -b  --basicauth user:pass                           Http basic-auth as username:password",
+    "  -u, --user      USER                                User to drop privileges once server socket is bound",
+    "  -h, --help                                          You're staring at it"
 ].join('\n');
 
 if (argv.h || argv.help || Object.keys(argv).length === 2) {
@@ -38,10 +38,38 @@ var target    = argv.t || argv.target,
 //
 // Check target VNC server
 //
-var vncsrvs, options = {};
+var vncsrvs = [], options = {};
 
 if (target) {
-    vncsrvs = target.split(',');
+    var vncs = target.split(',');
+
+    if (!Array.isArray(vncs)) vncs = [vncs];
+        
+    // normalize port range
+    for (var idx = 0; idx < vncs.length; idx ++) {
+        var vncstrs = vncs[idx].split(':');
+        var vnchost = vncstrs[0];
+
+        // support port range like localhost:5901-5910
+        var port_range = [];
+        if (vncstrs[1]) {
+            var pstr = vncstrs[1].split('-');
+
+            if (pstr.length > 1) {
+                port_range.push(parseInt(pstr[0], 10));
+                port_range.push(parseInt(pstr[1], 10));
+            } else {
+                port_range.push(parseInt(pstr[0], 10));
+                port_range.push(parseInt(pstr[0], 10));
+            }
+        } else {
+            port_range.push(5900);
+            port_range.push(5900);
+        }
+        for (var vncport = port_range[0]; vncport <= port_range[1]; vncport ++) {
+            vncsrvs.push(vnchost + ':' + vncport)
+        }
+    }   
 } else {
     return util.puts(help);
 }
