@@ -55,20 +55,25 @@ var webServer = module.exports.webServer = function(options) {
 		upapp.use(function(req, res) {
 			///console.log(req.body, req.files);
 
-			// rename file as timestamp_originalfilename
-			var newname = '' + Date.now() + '__' + req.files.file.originalFilename;
-			var newpath = upload + '/' + newname;
-			Fs.rename(req.files.file.path, newpath, function(err) {
-				if (err) {
-					res.writeHeader(501);
-					res.end('upload failed')
-				} else {
-					res.writeHeader(200, {'content-type': 'application/json'});
-					req.files.file.newname = newname;
-					req.files.file.newpath = newpath;
-					res.end(JSON.stringify(req.files));				
-				}
-			});
+			if (typeof req.files.file === 'object') {
+				// rename file as timestamp_originalfilename
+				var newname = '' + Date.now() + '__' + req.files.file.originalFilename;
+				var newpath = upload + '/' + newname;
+				Fs.rename(req.files.file.path, newpath, function(err) {
+					if (err) {
+						res.writeHeader(501);
+						res.end('upload failed');
+					} else {
+						res.writeHeader(200, {'content-type': 'application/json'});
+						req.files.file.newname = newname;
+						req.files.file.newpath = newpath;
+						res.end(JSON.stringify(req.files));				
+					}
+				});
+			} else {
+				res.writeHeader(200, {'content-type': 'application/json'});
+				res.end(JSON.stringify(req.files));				
+			}
 		});
 
 		app.use('/upload', upapp);

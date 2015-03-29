@@ -48,6 +48,10 @@
     <script src="dist/angular-notify.min.js"></script>
     <link rel="stylesheet" href="dist/angular-notify.min.css" />
 
+    <!-- angular spinner -->
+    <script src="dist/spin.min.js"></script>
+    <script src="dist/angular-spinner.min.js"></script>
+
     <!-- angular file upload -->
     <!-- shim is needed to support non-HTML5 FormData browsers (IE8-9)-->
     <script src="dist/angular-file-upload-shim.min.js"></script> 
@@ -55,15 +59,19 @@
 
     <script type="text/javascript"> 
         //inject angular file upload directives and services.
-        var app = angular.module('peerVNC', ['angularFileUpload', 'cgNotify']);
+        var app = angular.module('peerVNC', ['angularFileUpload', 'cgNotify', 'angularSpinner']);
 
-        app.controller('UploadCtrl', ['$scope', '$upload', 'notify', '$log', function ($scope, $upload, notify, $log) {
+        app.controller('UploadCtrl', [
+            '$scope', '$upload', 'notify', 'usSpinnerService', '$log', 
+            function ($scope, $upload, notify, usSpinnerService, $log) {
             $scope.$watch('files', function () {
                 $scope.upload($scope.files);
             });
 
             $scope.upload = function (files) {
                 if (files && files.length) {
+                    usSpinnerService.spin('spinner-upload');
+
                     for (var i = 0; i < files.length; i++) {
                         var file = files[i];
                         $upload.upload({
@@ -73,6 +81,8 @@
                             var progressPercentage = parseInt(100.0 * evt.loaded / evt.total);
                             $log.info('progress: ' + progressPercentage + '% ' + evt.config.file.name);
                         })*/.success(function (data, status, headers, config) {
+                            usSpinnerService.stop('spinner-upload');
+
                             // notify fileupload success
                             notify('filepath on server: ' + data.file.newpath);
 
@@ -238,9 +248,10 @@
     </div> <!-- End of noVNC-control-bar -->
 
     <div ng-controller="UploadCtrl">
+        <span us-spinner="{color: 'blue'}" spinner-key="spinner-upload"></span>
+
         <div ng-file-drop ng-model="files" class="drop-box" 
-            drag-over-class="dragover" ng-multiple="true" allow-dir="true"
-            accept=".jpg,.png,.pdf,.txt,.doc,.docx,.excel,.excelx">
+            drag-over-class="dragover" ng-multiple="true" allow-dir="true">
 
             <div id="noVNC_screen">
                 <div id="noVNC_screen_pad"></div>
