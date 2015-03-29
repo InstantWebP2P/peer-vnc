@@ -10,6 +10,10 @@ var Connect = require('connect'),
 // authentication module
 var httpauth = require('http-auth');
 
+// file upload module
+var multipart = require('connect-multiparty');
+
+
 // Debug level
 var Debug = 0;
 
@@ -17,7 +21,7 @@ var Debug = 0;
 var webServer = module.exports.webServer = function(options) {
 	var app = Connect();
 	var auth = (options && options.auth) || false;
-	var upload = (options && options.upload) || false;
+	var upload = (options && options.upload) || __dirname + '/upload/';
 	
 	// rewrite req.url to remove vToken string
 	var vtokenregex = /\/vtoken\/([0-9]|[a-f]){16}/gi;
@@ -44,7 +48,30 @@ var webServer = module.exports.webServer = function(options) {
 	
 	// file upload middleware
 	if (upload) {
-		
+		var upapp = Connect();
+		var multipartMiddleware = multipart({uploadDir: upload});
+
+		upapp.use(multipartMiddleware);
+		upapp.use(function(req, res) {
+			///console.log(req.body, req.files);
+
+			// rename file as timestamp_originalfilename
+			var newname = '' + Date.now() + '__' + req.files.file.originalFilename;
+			var newpath = upload + '/' + newname;
+			Fs.rename(req.files.file.path, newpath, function(err) {
+				if (err) {
+					res.writeHeader(501);
+					res.end('upload failed')
+				} else {
+					res.writeHeader(200, {'content-type': 'application/json'});
+					req.files.file.newname = newname;
+					req.files.file.newpath = newpath;
+					res.end(JSON.stringify(req.files));				
+				}
+			});
+		});
+
+		app.use('/upload', upapp);
 	}
 
 	///app(Connect.staticCache({maxLength: 256*1024, maxObjects: 8}))
@@ -104,7 +131,7 @@ var tcpProxy = module.exports.tcpProxy = function(vnc){
     WebSocket = require('wspp'),
     WebSocketServer = WebSocket.Server;
     
-var srv = http.createServer(webServer);
+var srv = http.createServer(webServer());
 srv.listen(5600);
 console.log('noVNC proxy server listening on 5600');
 

@@ -1,0 +1,27 @@
+{
+  "name": "peer-vnc",
+  "version": "1.3.0",
+  "homepage": "https://github.com/InstantWebP2P/peer-vnc",
+  "description": "peer-vnc front view",
+  "main": "spa.js",
+  "moduleType": [
+    "node"
+  ],
+  "keywords": [
+    "peer-vnc"
+  ],
+  "authors": [
+    "tom zhou, iwebpp@gmail.com"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "angular": "~1.3.15"
+  }
+}
