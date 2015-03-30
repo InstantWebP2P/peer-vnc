@@ -62,7 +62,7 @@ var webServer = module.exports.webServer = function(options) {
 				Fs.rename(req.files.file.path, newpath, function(err) {
 					if (err) {
 						res.writeHeader(501);
-						res.end('upload failed');
+						res.end('upload rename failed');
 					} else {
 						res.writeHeader(200, {'content-type': 'application/json'});
 						req.files.file.newname = newname;
