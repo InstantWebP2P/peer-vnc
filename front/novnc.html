@@ -52,6 +52,9 @@
     <script src="dist/spin.min.js"></script>
     <script src="dist/angular-spinner.min.js"></script>
 
+    <!-- angular fullscreen -->
+    <script src="dist/angular-fullscreen.js"></script>
+
     <!-- angular file upload -->
     <!-- shim is needed to support non-HTML5 FormData browsers (IE8-9)-->
     <script src="dist/angular-file-upload-shim.min.js"></script> 
@@ -59,11 +62,23 @@
 
     <script type="text/javascript"> 
         //inject angular file upload directives and services.
-        var app = angular.module('peerVNC', ['angularFileUpload', 'cgNotify', 'angularSpinner']);
+        var app = angular.module('peerVNC', ['angularFileUpload', 'cgNotify', 'angularSpinner', 'FBAngular']);
 
         app.controller('UploadCtrl', [
-            '$scope', '$upload', 'notify', 'usSpinnerService', '$log', 
-            function ($scope, $upload, notify, usSpinnerService, $log) {
+            '$scope', '$upload', 'notify', 'usSpinnerService', 'Fullscreen', '$log', 
+            function ($scope, $upload, notify, usSpinnerService, Fullscreen, $log) {
+            // fullscreen 
+            $scope.isFullscreen = false;
+            $scope.goFullscreen = function () {
+                if (Fullscreen.isEnabled()) {
+                    Fullscreen.cancel();
+                    $scope.isFullscreen = false;
+                } else {
+                    Fullscreen.all();
+                    $scope.isFullscreen = true;
+                }
+            };
+
             $scope.$watch('files', function () {
                 $scope.upload($scope.files);
             });
@@ -258,8 +273,13 @@
 
                 <h1 id="noVNC_logo"><span>no</span><br />VNC</h1>
 
+                <!-- fullscreen mode -->
+                <button ng-click="goFullscreen()" ng-hide="isFullscreen" style="color: blue">
+                    Enable/Disable VNC Fullscreen
+                </button>
+
                 <!-- HTML5 Canvas -->
-                <div id="noVNC_container">
+                <div id="noVNC_container" fullscreen="isFullscreen">
                     <canvas id="noVNC_canvas" width="640px" height="20px">
                                 Canvas not supported.
                     </canvas>
