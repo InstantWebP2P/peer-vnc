@@ -13,6 +13,7 @@ Access to VNC desktop from anywhere using web browser
 * Run over STUN session with iwebpp.io-stun-proxy
 * Support http basic-auth
 * Support upload file to remote server by drag and drop
+* Support VNC fullscreen mode
 
 ### Install manually
 * npm install peer-vnc, or git clone https://github.com/InstantWebP2P/peer-vnc.git && cd peer-vnc && npm install
