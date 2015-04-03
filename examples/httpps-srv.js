@@ -12,7 +12,7 @@ var forward = require('httpp-forward');
 app.use(forward.connect_httpp(5443)); // pass listening port
 
 // noVNC server
-app.use(noVNC.webServer);
+app.use(noVNC.webServer());
     
     
 var options = {

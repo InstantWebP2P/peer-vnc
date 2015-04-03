@@ -2,7 +2,7 @@
   "author": "Tom Zhou <iwebpp@gmail.com>",
   "name": "peer-vnc",
   "description": "access to VNC desktop from anywhere",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "repository": {
     "type": "git",
     "url": "git://github.com/InstantWebP2P/peer-vnc.git"
@@ -27,7 +27,7 @@
     "iwebpp.io": "latest",
     "optimist": "0.3.x",
     "qrcode-terminal": "0.9.2",
-    "wspp": "0.6.3",
+    "wspp": "0.7.1",
     "http-auth": "2.2.5",
     "connect-multiparty": "1.2.5"
   }
