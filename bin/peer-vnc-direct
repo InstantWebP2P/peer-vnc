@@ -27,7 +27,7 @@ var help = [
     "  -s  --secmode    https or http                       Secure mode: 1 - https; 0 - http server",
     "  -b  --basicauth  user:pass                           Http basic-auth as username:password",
     "  -d  --directory  /xxx/yy/                            File upload directory",
-    "  -p  --port       5168                                tcp or udp port to listen",
+    "  -p  --port       51686                               tcp and udp port to listen",
     "  -u, --user       USER                                User to drop privileges once server socket is bound",
     "  -h, --help                                          You're staring at it"
 ].join('\n');
@@ -108,8 +108,8 @@ port = parseInt(port, 10);
 var srv, srvpp;
 if (isHttps) {
     var certs = {
-        key: fs.readFileSync(__dirname+'/../examples/certs/server-key.pem'),
-        cert: fs.readFileSync(__dirname+'/../examples/certs/server-cert.pem')
+        key: fs.readFileSync(__dirname+'/certs/server-key.pem'),
+        cert: fs.readFileSync(__dirname+'/certs/server-cert.pem')
     };
 
     srv = https.createServer(certs, noVNC.webServer(options));
