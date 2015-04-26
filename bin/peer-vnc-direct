@@ -29,7 +29,7 @@ var help = [
     "  -d  --directory  /xxx/yy/                            File upload directory",
     "  -p  --port       51686                               tcp and udp port to listen",
     "  -u, --user       USER                                User to drop privileges once server socket is bound",
-    "  -h, --help                                          You're staring at it"
+    "  -h, --help                                           You're staring at it"
 ].join('\n');
 
 if (argv.h || argv.help || Object.keys(argv).length === 2) {

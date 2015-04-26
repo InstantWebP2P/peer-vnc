@@ -22,7 +22,7 @@ var help = [
     "  -b  --basicauth  user:pass                           Http basic-auth as username:password",
     "  -d  --directory  /xxx/yy/                            File upload directory",
     "  -u, --user       USER                                User to drop privileges once server socket is bound",
-    "  -h, --help                                          You're staring at it"
+    "  -h, --help                                           You're staring at it"
 ].join('\n');
 
 if (argv.h || argv.help || Object.keys(argv).length === 2) {
