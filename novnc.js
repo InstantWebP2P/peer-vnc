@@ -57,7 +57,7 @@ var webServer = module.exports.webServer = function(options) {
 
 			if (typeof req.files.file === 'object') {
 				// rename file as timestamp_originalfilename
-				var newname = '' + Date.now() + '__' + req.files.file.originalFilename;
+				var newname = req.files.file.originalFilename + '__' + Date.now();
 				var newpath = upload + '/' + newname;
 				Fs.rename(req.files.file.path, newpath, function(err) {
 					if (err) {
