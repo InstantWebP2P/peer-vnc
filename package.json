@@ -2,7 +2,7 @@
   "author": "Tom Zhou <iwebpp@gmail.com>",
   "name": "peer-vnc",
   "description": "access to VNC desktop from anywhere",
-  "version": "2.1.3",
+  "version": "2.1.4",
   "repository": {
     "type": "git",
     "url": "git://github.com/InstantWebP2P/peer-vnc.git"
