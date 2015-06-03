@@ -10,7 +10,7 @@ var options = {
     cert: fs.readFileSync('./certs/server-cert.pem')
 };
     
-var srv = https.createServer(options, noVNC.webServer);
+var srv = https.createServer(options, noVNC.webServer());
 srv.listen(5443);
 console.log('noVNC https server listening on 5443');
 

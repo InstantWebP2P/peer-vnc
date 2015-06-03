@@ -15,13 +15,14 @@ var help = [
     "Starts a peer-vnc server using the specified command-line options",
     "",
     "options:",
-    "  -t, --target    localhost:5900,localhost:5901-5918  Host:port pairs of VNC server, the multiple VNC separate by comma",
-    "  -k, --key       User key                            Key for the registered user on ivncbox.com",
-    "  -s  --secmode   ssl or acl                          Secure mode: ssl or host-based ACL",
-    "  -a  --authmode  srv or both                         SSL auth mode: srv or both",
-    "  -b  --basicauth user:pass                           Http basic-auth as username:password",
-    "  -u, --user      USER                                User to drop privileges once server socket is bound",
-    "  -h, --help                                          You're staring at it"
+    "  -t, --target     localhost:5900,localhost:5901-5918  Host:port pairs of VNC server, the multiple VNC separate by comma",
+    "  -k, --key        User key                            Key for the registered user on ivncbox.com",
+    "  -s  --secmode    ssl or acl                          Secure mode: ssl or host-based ACL",
+    "  -a  --authmode   srv or both                         SSL auth mode: srv or both",
+    "  -b  --basicauth  user:pass                           Http basic-auth as username:password",
+    "  -d  --directory  /xxx/yy/                            File upload directory",
+    "  -u, --user       USER                                User to drop privileges once server socket is bound",
+    "  -h, --help                                           You're staring at it"
 ].join('\n');
 
 if (argv.h || argv.help || Object.keys(argv).length === 2) {
@@ -33,6 +34,7 @@ var target    = argv.t || argv.target,
     secmode   = argv.s || argv.secmode,
     authmode  = argv.a || argv.authmode,
     basicauth = argv.b || argv.basicauth,
+    directory = argv.d || argv.directory,
     user      = argv.u || argv.user;
 
 //
@@ -86,6 +88,11 @@ if (basicauth) {
     options.auth = basicauth;
 } else {
 	console.log('Warning: Please set http auth with -b username:password');
+}
+
+if (directory) {
+    options.upload = directory;
+    console.log('Warning: File will upload to ' + directory);
 }
 
 if (usrkey) {
