@@ -136,8 +136,7 @@
                      style for example -->
                 <textarea id="keyboardinput" autocapitalize="off"
                     autocorrect="off" autocomplete="off" spellcheck="false"
-                    mozactionhint="Enter" onsubmit="return false;"
-                    style="ime-mode: disabled;"></textarea>
+                    mozactionhint="Enter"></textarea>
                 <div id="noVNC_extra_keys">
                     <input type="image" alt="Extra keys" src="images/showextrakeys.png"
                         id="showExtraKeysButton" class="noVNC_status_button">
@@ -169,6 +168,7 @@
             <input type="image" alt="Settings" src="images/settings.png"
                 id="settingsButton" class="noVNC_status_button"
                 title="Settings" />
+
             <input type="image" alt="Connect" src="images/connect.png"
                 id="connectButton" class="noVNC_status_button"
                 title="Connect" />
@@ -259,10 +259,11 @@
         <div id="noVNC_controls" class="triangle-right top">
             <ul>
                 <!-- comment host,port param
-				<li><label><strong>Host: </strong><input id="noVNC_host" /></label></li>
+		<li><label><strong>Host: </strong><input id="noVNC_host" /></label></li>
                 <li><label><strong>Port: </strong><input id="noVNC_port" /></label></li>
                 -->
-				<li><label><strong>Password: </strong><input id="noVNC_password" type="password" /></label></li>
+        
+		<li><label><strong>Password: </strong><input id="noVNC_password" type="password" /></label></li>
                 <li><input id="noVNC_connect_button" type="button" value="Connect"></li>
             </ul>
         </div>
@@ -287,7 +288,7 @@
 
                 <!-- HTML5 Canvas -->
                 <div id="noVNC_container" fullscreen="isFullscreen">
-                    <canvas id="noVNC_canvas" width="640px" height="20px">
+                    <canvas id="noVNC_canvas" width="0" height="0">
                                 Canvas not supported.
                     </canvas>
                 </div>

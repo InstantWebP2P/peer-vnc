@@ -20,7 +20,7 @@
   "main": "index",
   "bin": {
     "peer-vnc": "./bin/peer-vnc",
-    "peer-vnc": "./bin/peer-vnc-direct"
+    "peer-vnc-direct": "./bin/peer-vnc-direct"
   },
   "dependencies": {
     "commander": "1.1.1",
