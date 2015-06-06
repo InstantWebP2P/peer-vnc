@@ -11,6 +11,9 @@ Access to VNC desktop from anywhere using web browser
 * Proxy to multiple VNC server in single iwebpp.io client
 * Provide end-to-end security
 * Run over STUN session with iwebpp.io-stun-proxy
+* Support http basic-auth
+* Support upload file to remote server by drag and drop
+* Support VNC fullscreen mode
 
 ### Install manually
 * npm install peer-vnc, or git clone https://github.com/InstantWebP2P/peer-vnc.git && cd peer-vnc && npm install
@@ -23,6 +26,8 @@ Access to VNC desktop from anywhere using web browser
 * RPI package - https://github.com/InstantWebP2P/peer-vnc/archive/pkg-release-rpi.zip
 * Linux X86_64 package - https://github.com/InstantWebP2P/peer-vnc/archive/pkg-release-linux64.zip
 * Linux X86 package - https://github.com/InstantWebP2P/peer-vnc/archive/pkg-release-linux32.zip
+
+### Discussion group: https://groups.google.com/d/forum/iwebpp
 
 ### Usage/API:
 
@@ -41,7 +46,7 @@ Access to VNC desktop from anywhere using web browser
        VNC                   Proxy URL(please open it on browser)
        192.168.1.1:5900        https://af5e83731df02546.vurl.iwebpp.com:51688/vtoken/bb39fb0eb29f081e/peervnc
        
-    3. use peer-vnc binary on Linux, like  ./bin/peer-vnc -t 192.168.1.1:5900 -s acl -a srv
+    3. use peer-vnc binary on Linux, like  ./bin/peer-vnc -t 192.168.1.1:5900 -s acl -a srv -b user:pass -d /auto/vshare/
        VNC                   Proxy URL(please open it on browser)
        192.168.1.1:5900        https://41c522dab4ae47f9.vurl.iwebpp.com:51688/vtoken/516c97b3070de2e1/peervnc
 

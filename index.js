@@ -22,6 +22,10 @@ var Debug = 0;
 // -    vncs: array of VNC server host:port pair, like ['localhost:5900', '51dese.com:5901'}] 
 // -      fn: callback to pass proxy informations
 // - options: user custom parameters, like {usrkey: ..., domain: ..., endpoints: ..., turn: ...}
+// - options.secmode: ssl, enable ssl/https; acl, enable ssl/https,host-based ACL
+// - options.sslmode: srv, only verify server side cert; both, verify both server and client side cert
+// -    options.auth: http basic-auth as username:password
+// -  options.upload: file upload directory
 var Proxy = module.exports = function(vncs, fn, options){
     var self = this;
        
@@ -36,6 +40,16 @@ var Proxy = module.exports = function(vncs, fn, options){
     
     if (!Array.isArray(vncs)) vncs = [vncs];
         
+    // check basic auth
+    var basicauth = false;
+    if (options && options.auth) {
+    	var astr = options.auth.split(':');
+    	basicauth = {username: astr && astr[0], password: astr && astr[1]};
+    }
+    
+    // check upload 
+    var fileupload = (options && options.upload) || false;
+	
     // 1.
     // proxy URLs
     self.proxyURL = {}; // vURL for VNC server
@@ -103,7 +117,7 @@ var Proxy = module.exports = function(vncs, fn, options){
 	    
 	    // 4.2
 	    // add noVNC web service in App
-	    appHttp.use(noVNC.webServer);
+	    appHttp.use(noVNC.webServer({auth: basicauth, upload: fileupload}));
 	    
 	    // 5.
 	    // hook http App on name-client

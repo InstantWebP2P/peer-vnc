@@ -1,0 +1,163 @@
+#!/usr/bin/env node
+
+
+//
+// Please install node-httpp binary in your system exec dir, like /usr/bin/ or /usr/local/bin/
+//
+
+var util  = require('util'),
+    argv = require('optimist').argv,
+    noVNC = require('../novnc'),
+    http = require('http'),
+    https = require('https'),
+    httpp = require('httpp'),
+    httpps = require('httpps'),
+    fs = require('fs');
+    WebSocket = require('wspp'),
+    WebSocketServer = WebSocket.Server,
+    Connect = require('connect');
+
+var help = [
+    "usage: peer-vnc-direct [options] ",
+    "",
+    "Starts a peer-vnc server directly using the specified command-line options",
+    "",
+    "options:",
+    "  -t, --target     localhost:5900,localhost:5901-5918  Host:port pairs of VNC server, the multiple VNC separate by comma",
+    "  -s  --secmode    https or http                       Secure mode: 1 - https; 0 - http server",
+    "  -b  --basicauth  user:pass                           Http basic-auth as username:password",
+    "  -d  --directory  /xxx/yy/                            File upload directory",
+    "  -p  --port       51686                               tcp and udp port to listen",
+    "  -u, --user       USER                                User to drop privileges once server socket is bound",
+    "  -h, --help                                           You're staring at it"
+].join('\n');
+
+if (argv.h || argv.help || Object.keys(argv).length === 2) {
+  return util.puts(help);
+}
+
+var target    = argv.t || argv.target,
+    secmode   = argv.s || argv.secmode,
+    basicauth = argv.b || argv.basicauth,
+    directory = argv.d || argv.directory,
+    port      = argv.p || argv.port || '51686';
+    user      = argv.u || argv.user;
+
+//
+// Check target VNC server
+//
+var vncsrvs = [], options = {}, isHttps = false;
+
+if (target) {
+    var vncs = target.split(',');
+
+    if (!Array.isArray(vncs)) vncs = [vncs];
+        
+    // normalize port range
+    for (var idx = 0; idx < vncs.length; idx ++) {
+        var vncstrs = vncs[idx].split(':');
+        var vnchost = vncstrs[0];
+
+        // support port range like localhost:5901-5910
+        var port_range = [];
+        if (vncstrs[1]) {
+            var pstr = vncstrs[1].split('-');
+
+            if (pstr.length > 1) {
+                port_range.push(parseInt(pstr[0], 10));
+                port_range.push(parseInt(pstr[1], 10));
+            } else {
+                port_range.push(parseInt(pstr[0], 10));
+                port_range.push(parseInt(pstr[0], 10));
+            }
+        } else {
+            port_range.push(5900);
+            port_range.push(5900);
+        }
+        for (var vncport = port_range[0]; vncport <= port_range[1]; vncport ++) {
+            vncsrvs.push(vnchost + ':' + vncport)
+        }
+    }   
+} else {
+    return util.puts(help);
+}
+
+if (secmode) {
+    isHttps = true;
+}
+
+if (basicauth) {
+    var astr = basicauth.split(':');
+    options.auth = {username: astr && astr[0], password: astr && astr[1]};
+} else {
+	console.log('Warning: Please set http auth with -b username:password');
+}
+
+if (directory) {
+    options.upload = directory;
+    console.log('Warning: File will upload to ' + directory);
+}
+
+//
+// Create the VNC client server with the specified options
+//
+var proxes = {};
+
+port = parseInt(port, 10);
+
+var srv, srvpp;
+if (isHttps) {
+    var certs = {
+        key: fs.readFileSync(__dirname+'/certs/server-key.pem'),
+        cert: fs.readFileSync(__dirname+'/certs/server-cert.pem')
+    };
+
+    srv = https.createServer(certs, noVNC.webServer(options));
+    srv.listen(port);
+    ///console.log('peerVNC https server listening on ' + port);
+
+    srvpp = httpps.createServer(certs, noVNC.webServer(options));
+    srvpp.listen(port);
+    ///console.log('peerVNC httpps server listening on ' + port);
+} else {
+    srv = http.createServer(noVNC.webServer(options));
+    srv.listen(port);
+    ///console.log('peerVNC http server listening on ' + port);
+
+    srvpp = httpp.createServer(noVNC.webServer(options));
+    srvpp.listen(port);
+    ///console.log('peerVNC httpp server listening on ' + port);
+}
+
+// hook websocket 
+for (var idx = 0; idx < vncsrvs.length; idx ++) {
+    var vncstrs = vncsrvs[idx].split(':');
+    var vnchost = vncstrs[0];
+    var vncport = parseInt(vncstrs[1], 10);
+
+    // create ws server to proxy VNC/RFB data
+    var vncstr = vnchost+':'+vncport;
+    var wspath = '/'+vnchost+'-'+vncport;
+
+    var vncwss = new WebSocketServer({httpp: false, server: srv, path: wspath});
+    vncwss.on('connection', noVNC.tcpProxy({host: vnchost, port: vncport}));
+
+    var vncwsspp = new WebSocketServer({httpp: true, server: srvpp, path: wspath});
+    vncwsspp.on('connection', noVNC.tcpProxy({host: vnchost, port: vncport}));
+
+    proxes[vncstr] = (isHttps ? 'https' : 'http') + '://localhost:'+port + wspath;
+}
+
+console.log('VNC                            Proxy URL(please open it on browser, to external access replace localhost with external ip)');
+for (var k in proxes) {
+    console.log(k+'                 '+proxes[k]);
+}
+
+//
+// Drop privileges if requested
+//
+if (typeof user === 'string') {
+    process.setuid(user);
+}
+
+
