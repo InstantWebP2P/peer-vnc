@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html ng-app="peerVNC">
 <head>
 
     <!--
@@ -12,7 +12,7 @@
     Connect parameters are provided in query string:
         http://example.com/?host=HOST&port=PORT&encrypt=1&true_color=1
     -->
-    <title>noVNC</title>
+    <title>peerVNC</title>
 
     <meta charset="utf-8">
 
@@ -42,6 +42,72 @@
     <script type='text/javascript'
         src='http://getfirebug.com/releases/lite/1.2/firebug-lite-compressed.js'></script>
     -->
+
+    <!-- angular notify -->
+    <script src="dist/angular.min.js"></script>
+    <script src="dist/angular-notify.min.js"></script>
+    <link rel="stylesheet" href="dist/angular-notify.min.css" />
+
+    <!-- angular spinner -->
+    <script src="dist/spin.min.js"></script>
+    <script src="dist/angular-spinner.min.js"></script>
+
+    <!-- angular fullscreen -->
+    <script src="dist/angular-fullscreen.js"></script>
+
+    <!-- angular file upload -->
+    <!-- shim is needed to support non-HTML5 FormData browsers (IE8-9)-->
+    <script src="dist/angular-file-upload-shim.min.js"></script> 
+    <script src="dist/angular-file-upload.min.js"></script>
+
+    <script type="text/javascript"> 
+        //inject angular file upload directives and services.
+        var app = angular.module('peerVNC', ['angularFileUpload', 'cgNotify', 'angularSpinner', 'FBAngular']);
+
+        app.controller('UploadCtrl', [
+            '$scope', '$upload', 'notify', 'usSpinnerService', 'Fullscreen', '$log', 
+            function ($scope, $upload, notify, usSpinnerService, Fullscreen, $log) {
+            // fullscreen 
+            $scope.isFullscreen = false;
+            $scope.goFullscreen = function () {
+                if (Fullscreen.isEnabled()) {
+                    Fullscreen.cancel();
+                    $scope.isFullscreen = false;
+                } else {
+                    Fullscreen.all();
+                    $scope.isFullscreen = true;
+                }
+            };
+
+            $scope.$watch('files', function () {
+                $scope.upload($scope.files);
+            });
+
+            $scope.upload = function (files) {
+                if (files && files.length) {
+                    usSpinnerService.spin('spinner-upload');
+
+                    for (var i = 0; i < files.length; i++) {
+                        var file = files[i];
+                        $upload.upload({
+                            url: 'upload',
+                            file: file
+                        })/*.progress(function (evt) {
+                            var progressPercentage = parseInt(100.0 * evt.loaded / evt.total);
+                            $log.info('progress: ' + progressPercentage + '% ' + evt.config.file.name);
+                        })*/.success(function (data, status, headers, config) {
+                            usSpinnerService.stop('spinner-upload');
+
+                            // notify fileupload success
+                            notify('filepath on server: ' + data.file.newpath);
+
+                            $log.info('file ' + config.file.name + 'uploaded. Response: ' + JSON.stringify(data));
+                        });
+                    }
+                }
+            };
+        }]);
+    </script>
 
 </head>
 
@@ -196,20 +262,34 @@
 
     </div> <!-- End of noVNC-control-bar -->
 
+    <div ng-controller="UploadCtrl">
+        <span us-spinner="{color: 'blue'}" spinner-key="spinner-upload"></span>
 
-    <div id="noVNC_screen">
-        <div id="noVNC_screen_pad"></div>
+        <div ng-file-drop ng-model="files" class="drop-box" 
+            drag-over-class="dragover" ng-multiple="true" allow-dir="true">
 
-        <h1 id="noVNC_logo"><span>no</span><br />VNC</h1>
+            <div id="noVNC_screen">
+                <div id="noVNC_screen_pad"></div>
 
-        <!-- HTML5 Canvas -->
-        <div id="noVNC_container">
-            <canvas id="noVNC_canvas" width="640px" height="20px">
-                        Canvas not supported.
-            </canvas>
+                <h1 id="noVNC_logo"><span>peer</span><br />VNC</h1>
+
+                <!-- fullscreen mode -->
+                <button ng-click="goFullscreen()" ng-hide="isFullscreen" style="color: blue">
+                    Enable VNC Fullscreen
+                </button>
+
+                <!-- HTML5 Canvas -->
+                <div id="noVNC_container" fullscreen="isFullscreen">
+                    <canvas id="noVNC_canvas" width="640px" height="20px">
+                                Canvas not supported.
+                    </canvas>
+                </div>
+
+            </div>
+
         </div>
-
     </div>
+
     <script src="include/util.js"></script>
     <script src="include/ui.js"></script>
 
