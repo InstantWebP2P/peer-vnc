@@ -667,7 +667,7 @@ updateXvpVisualState: function(ver) {
 
 // Display the desktop name in the document title
 updateDocumentTitle: function(rfb, name) {
-    document.title = name + " - noVNC";
+    document.title = name + " - peerVNC";
 },
 
 
