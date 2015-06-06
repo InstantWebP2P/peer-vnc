@@ -4,7 +4,7 @@ var noVNC = require('../novnc'),
     WebSocketServer = WebSocket.Server;
     
     
-var srv = http.createServer(noVNC.webServer);
+var srv = http.createServer(noVNC.webServer());
 srv.listen(5080);
 console.log('noVNC http server listening on 5080');
 
