@@ -293,7 +293,7 @@ var UI;
 
         // Read form control compatible setting from cookie
         getSetting: function(name) {
-            console.log('ui name:'+name);
+            Util.Debug('ui name:'+name);
 
             var ctrl = $D('noVNC_' + name);
             var val = WebUtil.readSetting(name);
