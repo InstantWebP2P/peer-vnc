@@ -609,7 +609,7 @@ var UI;
             UI.saveSetting('clip');
             UI.saveSetting('shared');
             UI.saveSetting('view_only');
-            UI.saveSetting('path');
+            ///UI.saveSetting('path');
             UI.saveSetting('repeaterID');
             UI.saveSetting('stylesheet');
             UI.saveSetting('logging');
