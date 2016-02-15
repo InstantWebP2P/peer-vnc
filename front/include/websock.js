@@ -14,8 +14,8 @@
  * read binary data off of the receive queue.
  */
 
-/*jslint browser: true, bitwise: false, plusplus: false */
-/*global Util, Base64 */
+/*jslint browser: true, bitwise: true */
+/*global Util*/
 
 
 // Load Flash WebSocket emulator if needed
@@ -34,390 +34,407 @@ if (window.WebSocket && !window.WEB_SOCKET_FORCE_FLASH) {
     /* no builtin WebSocket so load web_socket.js */
 
     Websock_native = false;
-    (function () {
-        window.WEB_SOCKET_SWF_LOCATION = Util.get_include_uri() +
-                    "web-socket-js/WebSocketMain.swf";
-        if (Util.Engine.trident) {
-            Util.Debug("Forcing uncached load of WebSocketMain.swf");
-            window.WEB_SOCKET_SWF_LOCATION += "?" + Math.random();
-        }
-        Util.load_scripts(["web-socket-js/swfobject.js",
-                           "web-socket-js/web_socket.js"]);
-    }());
 }
-
 
 function Websock() {
-"use strict";
+    "use strict";
 
-var api = {},         // Public API
-    websocket = null, // WebSocket object
-    mode = 'base64',  // Current WebSocket mode: 'binary', 'base64'
-    rQ = [],          // Receive queue
-    rQi = 0,          // Receive queue index
-    rQmax = 10000,    // Max receive queue size before compacting
-    sQ = [],          // Send queue
+    this._websocket = null;  // WebSocket object
 
-    eventHandlers = {
-        'message' : function() {},
-        'open'    : function() {},
-        'close'   : function() {},
-        'error'   : function() {}
-    },
+    this._rQi = 0;           // Receive queue index
+    this._rQlen = 0;         // Next write position in the receive queue
+    this._rQbufferSize = 1024 * 1024 * 4; // Receive queue buffer size (4 MiB)
+    this._rQmax = this._rQbufferSize / 8;
+    // called in init: this._rQ = new Uint8Array(this._rQbufferSize);
+    this._rQ = null; // Receive queue
 
-    test_mode = false;
+    this._sQbufferSize = 1024 * 10;  // 10 KiB
+    // called in init: this._sQ = new Uint8Array(this._sQbufferSize);
+    this._sQlen = 0;
+    this._sQ = null;  // Send queue
 
+    this._mode = 'binary';    // Current WebSocket mode: 'binary', 'base64'
+    this.maxBufferedAmount = 200;
 
-//
-// Queue public functions
-//
-
-function get_sQ() {
-    return sQ;
-}
-
-function get_rQ() {
-    return rQ;
-}
-function get_rQi() {
-    return rQi;
-}
-function set_rQi(val) {
-    rQi = val;
+    this._eventHandlers = {
+        'message': function () {},
+        'open': function () {},
+        'close': function () {},
+        'error': function () {}
+    };
 }
 
-function rQlen() {
-    return rQ.length - rQi;
-}
+(function () {
+    "use strict";
+    // this has performance issues in some versions Chromium, and
+    // doesn't gain a tremendous amount of performance increase in Firefox
+    // at the moment.  It may be valuable to turn it on in the future.
+    var ENABLE_COPYWITHIN = false;
 
-function rQpeek8() {
-    return (rQ[rQi]      );
-}
-function rQshift8() {
-    return (rQ[rQi++]      );
-}
-function rQunshift8(num) {
-    if (rQi === 0) {
-        rQ.unshift(num);
-    } else {
-        rQi -= 1;
-        rQ[rQi] = num;
-    }
+    var MAX_RQ_GROW_SIZE = 40 * 1024 * 1024;  // 40 MiB
 
-}
-function rQshift16() {
-    return (rQ[rQi++] <<  8) +
-           (rQ[rQi++]      );
-}
-function rQshift32() {
-    return (rQ[rQi++] << 24) +
-           (rQ[rQi++] << 16) +
-           (rQ[rQi++] <<  8) +
-           (rQ[rQi++]      );
-}
-function rQshiftStr(len) {
-    if (typeof(len) === 'undefined') { len = rQlen(); }
-    var arr = rQ.slice(rQi, rQi + len);
-    rQi += len;
-    return String.fromCharCode.apply(null, arr);
-}
-function rQshiftBytes(len) {
-    if (typeof(len) === 'undefined') { len = rQlen(); }
-    rQi += len;
-    return rQ.slice(rQi-len, rQi);
-}
+    var typedArrayToString = (function () {
+        // This is only for PhantomJS, which doesn't like apply-ing
+        // with Typed Arrays
+        try {
+            var arr = new Uint8Array([1, 2, 3]);
+            String.fromCharCode.apply(null, arr);
+            return function (a) { return String.fromCharCode.apply(null, a); };
+        } catch (ex) {
+            return function (a) {
+                return String.fromCharCode.apply(
+                    null, Array.prototype.slice.call(a));
+            };
+        }
+    })();
 
-function rQslice(start, end) {
-    if (end) {
-        return rQ.slice(rQi + start, rQi + end);
-    } else {
-        return rQ.slice(rQi + start);
-    }
-}
+    Websock.prototype = {
+        // Getters and Setters
+        get_sQ: function () {
+            return this._sQ;
+        },
 
-// Check to see if we must wait for 'num' bytes (default to FBU.bytes)
-// to be available in the receive queue. Return true if we need to
-// wait (and possibly print a debug message), otherwise false.
-function rQwait(msg, num, goback) {
-    var rQlen = rQ.length - rQi; // Skip rQlen() function call
-    if (rQlen < num) {
-        if (goback) {
-            if (rQi < goback) {
-                throw("rQwait cannot backup " + goback + " bytes");
+        get_rQ: function () {
+            return this._rQ;
+        },
+
+        get_rQi: function () {
+            return this._rQi;
+        },
+
+        set_rQi: function (val) {
+            this._rQi = val;
+        },
+
+        // Receive Queue
+        rQlen: function () {
+            return this._rQlen - this._rQi;
+        },
+
+        rQpeek8: function () {
+            return this._rQ[this._rQi];
+        },
+
+        rQshift8: function () {
+            return this._rQ[this._rQi++];
+        },
+
+        rQskip8: function () {
+            this._rQi++;
+        },
+
+        rQskipBytes: function (num) {
+            this._rQi += num;
+        },
+
+        // TODO(directxman12): test performance with these vs a DataView
+        rQshift16: function () {
+            return (this._rQ[this._rQi++] << 8) +
+                   this._rQ[this._rQi++];
+        },
+
+        rQshift32: function () {
+            return (this._rQ[this._rQi++] << 24) +
+                   (this._rQ[this._rQi++] << 16) +
+                   (this._rQ[this._rQi++] << 8) +
+                   this._rQ[this._rQi++];
+        },
+
+        rQshiftStr: function (len) {
+            if (typeof(len) === 'undefined') { len = this.rQlen(); }
+            var arr = new Uint8Array(this._rQ.buffer, this._rQi, len);
+            this._rQi += len;
+            return typedArrayToString(arr);
+        },
+
+        rQshiftBytes: function (len) {
+            if (typeof(len) === 'undefined') { len = this.rQlen(); }
+            this._rQi += len;
+            return new Uint8Array(this._rQ.buffer, this._rQi - len, len);
+        },
+
+        rQshiftTo: function (target, len) {
+            if (len === undefined) { len = this.rQlen(); }
+            // TODO: make this just use set with views when using a ArrayBuffer to store the rQ
+            target.set(new Uint8Array(this._rQ.buffer, this._rQi, len));
+            this._rQi += len;
+        },
+
+        rQwhole: function () {
+            return new Uint8Array(this._rQ.buffer, 0, this._rQlen);
+        },
+
+        rQslice: function (start, end) {
+            if (end) {
+                return new Uint8Array(this._rQ.buffer, this._rQi + start, end - start);
+            } else {
+                return new Uint8Array(this._rQ.buffer, this._rQi + start, this._rQlen - this._rQi - start);
             }
-            rQi -= goback;
-        }
-        //Util.Debug("   waiting for " + (num-rQlen) +
-        //           " " + msg + " byte(s)");
-        return true;  // true means need more data
-    }
-    return false;
-}
+        },
 
-//
-// Private utility routines
-//
-
-function encode_message() {
-    if (mode === 'binary') {
-        // Put in a binary arraybuffer
-        return (new Uint8Array(sQ)).buffer;
-    } else {
-        // base64 encode
-        return Base64.encode(sQ);
-    }
-}
-
-function decode_message(data) {
-    //Util.Debug(">> decode_message: " + data);
-    if (mode === 'binary') {
-        // push arraybuffer values onto the end
-        var u8 = new Uint8Array(data);
-        for (var i = 0; i < u8.length; i++) {
-            rQ.push(u8[i]);
-        }
-    } else {
-        // base64 decode and concat to the end
-        rQ = rQ.concat(Base64.decode(data, 0));
-    }
-    //Util.Debug(">> decode_message, rQ: " + rQ);
-}
-
-
-//
-// Public Send functions
-//
-
-function flush() {
-    if (websocket.bufferedAmount !== 0) {
-        Util.Debug("bufferedAmount: " + websocket.bufferedAmount);
-    }
-    if (websocket.bufferedAmount < api.maxBufferedAmount) {
-        //Util.Debug("arr: " + arr);
-        //Util.Debug("sQ: " + sQ);
-        if (sQ.length > 0) {
-            websocket.send(encode_message(sQ));
-            sQ = [];
-        }
-        return true;
-    } else {
-        Util.Info("Delaying send, bufferedAmount: " +
-                websocket.bufferedAmount);
-        return false;
-    }
-}
-
-// overridable for testing
-function send(arr) {
-    //Util.Debug(">> send_array: " + arr);
-    sQ = sQ.concat(arr);
-    return flush();
-}
-
-function send_string(str) {
-    //Util.Debug(">> send_string: " + str);
-    api.send(str.split('').map(
-        function (chr) { return chr.charCodeAt(0); } ) );
-}
-
-//
-// Other public functions
-
-function recv_message(e) {
-    //Util.Debug(">> recv_message: " + e.data.length);
-
-    try {
-        decode_message(e.data);
-        if (rQlen() > 0) {
-            eventHandlers.message();
-            // Compact the receive queue
-            if (rQ.length > rQmax) {
-                //Util.Debug("Compacting receive queue");
-                rQ = rQ.slice(rQi);
-                rQi = 0;
+        // Check to see if we must wait for 'num' bytes (default to FBU.bytes)
+        // to be available in the receive queue. Return true if we need to
+        // wait (and possibly print a debug message), otherwise false.
+        rQwait: function (msg, num, goback) {
+            var rQlen = this._rQlen - this._rQi; // Skip rQlen() function call
+            if (rQlen < num) {
+                if (goback) {
+                    if (this._rQi < goback) {
+                        throw new Error("rQwait cannot backup " + goback + " bytes");
+                    }
+                    this._rQi -= goback;
+                }
+                return true; // true means need more data
             }
-        } else {
-            Util.Debug("Ignoring empty message");
-        }
-    } catch (exc) {
-        if (typeof exc.stack !== 'undefined') {
-            Util.Warn("recv_message, caught exception: " + exc.stack);
-        } else if (typeof exc.description !== 'undefined') {
-            Util.Warn("recv_message, caught exception: " + exc.description);
-        } else {
-            Util.Warn("recv_message, caught exception:" + exc);
-        }
-        if (typeof exc.name !== 'undefined') {
-            eventHandlers.error(exc.name + ": " + exc.message);
-        } else {
-            eventHandlers.error(exc);
-        }
-    }
-    //Util.Debug("<< recv_message");
-}
+            return false;
+        },
 
+        // Send Queue
 
-// Set event handlers
-function on(evt, handler) { 
-    eventHandlers[evt] = handler;
-}
+        flush: function () {
+            if (this._websocket.bufferedAmount !== 0) {
+                Util.Debug("bufferedAmount: " + this._websocket.bufferedAmount);
+            }
 
-function init(protocols) {
-    rQ         = [];
-    rQi        = 0;
-    sQ         = [];
-    websocket  = null;
+            if (this._websocket.bufferedAmount < this.maxBufferedAmount) {
+                if (this._sQlen > 0) {
+                    this._websocket.send(this._encode_message());
+                    this._sQlen = 0;
+                }
 
-    var bt = false,
-        wsbt = false,
-        try_binary = false;
+                return true;
+            } else {
+                Util.Info("Delaying send, bufferedAmount: " +
+                        this._websocket.bufferedAmount);
+                return false;
+            }
+        },
 
-    // Check for full typed array support
-    if (('Uint8Array' in window) &&
-        ('set' in Uint8Array.prototype)) {
-        bt = true;
-    }
+        send: function (arr) {
+            this._sQ.set(arr, this._sQlen);
+            this._sQlen += arr.length;
+            return this.flush();
+        },
 
-    // Check for full binary type support in WebSockets
-    // TODO: this sucks, the property should exist on the prototype
-    // but it does not.
-    try {
-        // use wss but ws
-        if (bt && ('binaryType' in (new WebSocket("wss://localhost:17523")))) {
-            Util.Info("Detected binaryType support in WebSockets");
-            wsbt = true;
-        }
-    } catch (exc) {
-        // Just ignore failed test localhost connections
-    }
+        send_string: function (str) {
+            this.send(str.split('').map(function (chr) {
+                return chr.charCodeAt(0);
+            }));
+        },
 
-    // Default protocols if not specified
-    if (typeof(protocols) === "undefined") {
-        if (wsbt) {
-            protocols = ['binary', 'base64'];
-        } else {
-            protocols = 'base64';
-        }
-    }
+        // Event Handlers
+        off: function (evt) {
+            this._eventHandlers[evt] = function () {};
+        },
 
-    // If no binary support, make sure it was not requested
-    if (!wsbt) {
-        if (protocols === 'binary') {
-            throw("WebSocket binary sub-protocol requested but not supported");
-        }
-        if (typeof(protocols) === "object") {
-            var new_protocols = [];
-            for (var i = 0; i < protocols.length; i++) {
-                if (protocols[i] === 'binary') {
-                    Util.Error("Skipping unsupported WebSocket binary sub-protocol");
+        on: function (evt, handler) {
+            this._eventHandlers[evt] = handler;
+        },
+
+        _allocate_buffers: function () {
+            this._rQ = new Uint8Array(this._rQbufferSize);
+            this._sQ = new Uint8Array(this._sQbufferSize);
+        },
+
+        init: function (protocols, ws_schema) {
+            this._allocate_buffers();
+            this._rQi = 0;
+            this._websocket = null;
+
+            // Check for full typed array support
+            var bt = false;
+            if (('Uint8Array' in window) &&
+                    ('set' in Uint8Array.prototype)) {
+                bt = true;
+            }
+
+            // Check for full binary type support in WebSockets
+            // Inspired by:
+            // https://github.com/Modernizr/Modernizr/issues/370
+            // https://github.com/Modernizr/Modernizr/blob/master/feature-detects/websockets/binary.js
+            var wsbt = false;
+            try {
+                if (bt && ('binaryType' in WebSocket.prototype ||
+                           !!(new WebSocket(ws_schema + '://.').binaryType))) {
+                    Util.Info("Detected binaryType support in WebSockets");
+                    wsbt = true;
+                }
+            } catch (exc) {
+                // Just ignore failed test localhost connection
+            }
+
+            // Default protocols if not specified
+            if (typeof(protocols) === "undefined") {
+                protocols = 'binary';
+            }
+
+            if (Array.isArray(protocols) && protocols.indexOf('binary') > -1) {
+                protocols = 'binary';
+            }
+
+            if (!wsbt) {
+                throw new Error("noVNC no longer supports base64 WebSockets.  " +
+                                "Please use a browser which supports binary WebSockets.");
+            }
+
+            if (protocols != 'binary') {
+                throw new Error("noVNC no longer supports base64 WebSockets.  Please " +
+                                "use the binary subprotocol instead.");
+            }
+
+            return protocols;
+        },
+
+        open: function (uri, protocols) {
+            var ws_schema = uri.match(/^([a-z]+):\/\//)[1];
+            protocols = this.init(protocols, ws_schema);
+
+            this._websocket = new WebSocket(uri, protocols);
+
+            if (protocols.indexOf('binary') >= 0) {
+                this._websocket.binaryType = 'arraybuffer';
+            }
+
+            this._websocket.onmessage = this._recv_message.bind(this);
+            this._websocket.onopen = (function () {
+                Util.Debug('>> WebSock.onopen');
+                if (this._websocket.protocol) {
+                    this._mode = this._websocket.protocol;
+                    Util.Info("Server choose sub-protocol: " + this._websocket.protocol);
                 } else {
-                    new_protocols.push(protocols[i]);
+                    this._mode = 'binary';
+                    Util.Error('Server select no sub-protocol!: ' + this._websocket.protocol);
+                }
+
+                if (this._mode != 'binary') {
+                    throw new Error("noVNC no longer supports base64 WebSockets.  Please " +
+                                    "use the binary subprotocol instead.");
+
+                }
+
+                this._eventHandlers.open();
+                Util.Debug("<< WebSock.onopen");
+            }).bind(this);
+            this._websocket.onclose = (function (e) {
+                Util.Debug(">> WebSock.onclose");
+                this._eventHandlers.close(e);
+                Util.Debug("<< WebSock.onclose");
+            }).bind(this);
+            this._websocket.onerror = (function (e) {
+                Util.Debug(">> WebSock.onerror: " + e);
+                this._eventHandlers.error(e);
+                Util.Debug("<< WebSock.onerror: " + e);
+            }).bind(this);
+        },
+
+        close: function () {
+            if (this._websocket) {
+                if ((this._websocket.readyState === WebSocket.OPEN) ||
+                        (this._websocket.readyState === WebSocket.CONNECTING)) {
+                    Util.Info("Closing WebSocket connection");
+                    this._websocket.close();
+                }
+
+                this._websocket.onmessage = function (e) { return; };
+            }
+        },
+
+        // private methods
+        _encode_message: function () {
+            // Put in a binary arraybuffer
+            // according to the spec, you can send ArrayBufferViews with the send method
+            return new Uint8Array(this._sQ.buffer, 0, this._sQlen);
+        },
+
+        _expand_compact_rQ: function (min_fit) {
+            var resizeNeeded = min_fit || this._rQlen - this._rQi > this._rQbufferSize / 2;
+            if (resizeNeeded) {
+                if (!min_fit) {
+                    // just double the size if we need to do compaction
+                    this._rQbufferSize *= 2;
+                } else {
+                    // otherwise, make sure we satisy rQlen - rQi + min_fit < rQbufferSize / 8
+                    this._rQbufferSize = (this._rQlen - this._rQi + min_fit) * 8;
                 }
             }
-            if (new_protocols.length > 0) {
-                protocols = new_protocols;
+
+            // we don't want to grow unboundedly
+            if (this._rQbufferSize > MAX_RQ_GROW_SIZE) {
+                this._rQbufferSize = MAX_RQ_GROW_SIZE;
+                if (this._rQbufferSize - this._rQlen - this._rQi < min_fit) {
+                    throw new Exception("Receive Queue buffer exceeded " + MAX_RQ_GROW_SIZE + " bytes, and the new message could not fit");
+                }
+            }
+
+            if (resizeNeeded) {
+                var old_rQbuffer = this._rQ.buffer;
+                this._rQmax = this._rQbufferSize / 8;
+                this._rQ = new Uint8Array(this._rQbufferSize);
+                this._rQ.set(new Uint8Array(old_rQbuffer, this._rQi));
             } else {
-                throw("Only WebSocket binary sub-protocol was requested and not supported.");
+                if (ENABLE_COPYWITHIN) {
+                    this._rQ.copyWithin(0, this._rQi);
+                } else {
+                    this._rQ.set(new Uint8Array(this._rQ.buffer, this._rQi));
+                }
+            }
+
+            this._rQlen = this._rQlen - this._rQi;
+            this._rQi = 0;
+        },
+
+        _decode_message: function (data) {
+            // push arraybuffer values onto the end
+            var u8 = new Uint8Array(data);
+            if (u8.length > this._rQbufferSize - this._rQlen) {
+                this._expand_compact_rQ(u8.length);
+            }
+            this._rQ.set(u8, this._rQlen);
+            this._rQlen += u8.length;
+        },
+
+        _recv_message: function (e) {
+            try {
+                this._decode_message(e.data);
+                if (this.rQlen() > 0) {
+                    this._eventHandlers.message();
+                    // Compact the receive queue
+                    if (this._rQlen == this._rQi) {
+                        this._rQlen = 0;
+                        this._rQi = 0;
+                    } else if (this._rQlen > this._rQmax) {
+                        this._expand_compact_rQ();
+                    }
+                } else {
+                    Util.Debug("Ignoring empty message");
+                }
+            } catch (exc) {
+                var exception_str = "";
+                if (exc.name) {
+                    exception_str += "\n    name: " + exc.name + "\n";
+                    exception_str += "    message: " + exc.message + "\n";
+                }
+
+                if (typeof exc.description !== 'undefined') {
+                    exception_str += "    description: " + exc.description + "\n";
+                }
+
+                if (typeof exc.stack !== 'undefined') {
+                    exception_str += exc.stack;
+                }
+
+                if (exception_str.length > 0) {
+                    Util.Error("recv_message, caught exception: " + exception_str);
+                } else {
+                    Util.Error("recv_message, caught exception: " + exc);
+                }
+
+                if (typeof exc.name !== 'undefined') {
+                    this._eventHandlers.error(exc.name + ": " + exc.message);
+                } else {
+                    this._eventHandlers.error(exc);
+                }
             }
         }
-    }
-
-    return protocols;
-}
-
-function open(uri, protocols) {
-    protocols = init(protocols);
-
-    if (test_mode) {
-        websocket = {};
-    } else {
-        websocket = new WebSocket(uri, protocols);
-        if (protocols.indexOf('binary') >= 0) {
-            websocket.binaryType = 'arraybuffer';
-        }
-    }
-
-    websocket.onmessage = recv_message;
-    websocket.onopen = function() {
-        Util.Debug(">> WebSock.onopen");
-        if (websocket.protocol) {
-            mode = websocket.protocol;
-            Util.Info("Server chose sub-protocol: " + websocket.protocol);
-        } else {
-            mode = 'base64';
-            Util.Error("Server select no sub-protocol!: " + websocket.protocol);
-        }
-        eventHandlers.open();
-        Util.Debug("<< WebSock.onopen");
     };
-    websocket.onclose = function(e) {
-        Util.Debug(">> WebSock.onclose");
-        eventHandlers.close(e);
-        Util.Debug("<< WebSock.onclose");
-    };
-    websocket.onerror = function(e) {
-        Util.Debug(">> WebSock.onerror: " + e);
-        eventHandlers.error(e);
-        Util.Debug("<< WebSock.onerror");
-    };
-}
-
-function close() {
-    if (websocket) {
-        if ((websocket.readyState === WebSocket.OPEN) ||
-            (websocket.readyState === WebSocket.CONNECTING)) {
-            Util.Info("Closing WebSocket connection");
-            websocket.close();
-        }
-        websocket.onmessage = function (e) { return; };
-    }
-}
-
-// Override internal functions for testing
-// Takes a send function, returns reference to recv function
-function testMode(override_send, data_mode) {
-    test_mode = true;
-    mode = data_mode;
-    api.send = override_send;
-    api.close = function () {};
-    return recv_message;
-}
-
-function constructor() {
-    // Configuration settings
-    api.maxBufferedAmount = 200;
-
-    // Direct access to send and receive queues
-    api.get_sQ       = get_sQ;
-    api.get_rQ       = get_rQ;
-    api.get_rQi      = get_rQi;
-    api.set_rQi      = set_rQi;
-
-    // Routines to read from the receive queue
-    api.rQlen        = rQlen;
-    api.rQpeek8      = rQpeek8;
-    api.rQshift8     = rQshift8;
-    api.rQunshift8   = rQunshift8;
-    api.rQshift16    = rQshift16;
-    api.rQshift32    = rQshift32;
-    api.rQshiftStr   = rQshiftStr;
-    api.rQshiftBytes = rQshiftBytes;
-    api.rQslice      = rQslice;
-    api.rQwait       = rQwait;
-
-    api.flush        = flush;
-    api.send         = send;
-    api.send_string  = send_string;
-
-    api.on           = on;
-    api.init         = init;
-    api.open         = open;
-    api.close        = close;
-    api.testMode     = testMode;
-
-    return api;
-}
-
-return constructor();
-
-}
+})();
