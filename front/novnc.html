@@ -52,9 +52,6 @@
     <script src="dist/spin.min.js"></script>
     <script src="dist/angular-spinner.min.js"></script>
 
-    <!-- angular fullscreen -->
-    <script src="dist/angular-fullscreen.js"></script>
-
     <!-- angular file upload -->
     <!-- shim is needed to support non-HTML5 FormData browsers (IE8-9)-->
     <script src="dist/angular-file-upload-shim.min.js"></script> 
@@ -62,23 +59,12 @@
 
     <script type="text/javascript"> 
         //inject angular file upload directives and services.
-        var app = angular.module('peerVNC', ['angularFileUpload', 'cgNotify', 'angularSpinner', 'FBAngular']);
+        var app = angular.module('peerVNC', ['angularFileUpload', 'cgNotify', 'angularSpinner']);
 
         app.controller('UploadCtrl', [
-            '$scope', '$upload', 'notify', 'usSpinnerService', 'Fullscreen', '$log', 
-            function ($scope, $upload, notify, usSpinnerService, Fullscreen, $log) {
-            // fullscreen 
-            $scope.isFullscreen = false;
-            $scope.goFullscreen = function () {
-                if (Fullscreen.isEnabled()) {
-                    Fullscreen.cancel();
-                    $scope.isFullscreen = false;
-                } else {
-                    Fullscreen.all();
-                    $scope.isFullscreen = true;
-                }
-            };
-
+            '$scope', '$upload', 'notify', 'usSpinnerService', '$log', 
+            function ($scope, $upload, notify, usSpinnerService, $log) {
+            
             $scope.$watch('files', function () {
                 $scope.upload($scope.files);
             });
@@ -112,7 +98,7 @@
 </head>
 
 <body>
-    <div id="noVNC-control-bar">
+    <div id="noVNC-control-bar" class="noVNC_status_normal">
         <!--noVNC Mobile Device only Buttons-->
         <div class="noVNC-buttons-left">
             <input type="image" alt="viewport drag" src="images/drag.png"
@@ -136,8 +122,7 @@
                      style for example -->
                 <textarea id="keyboardinput" autocapitalize="off"
                     autocorrect="off" autocomplete="off" spellcheck="false"
-                    mozactionhint="Enter" onsubmit="return false;"
-                    style="ime-mode: disabled;"></textarea>
+                    mozactionhint="Enter"></textarea>
                 <div id="noVNC_extra_keys">
                     <input type="image" alt="Extra keys" src="images/showextrakeys.png"
                         id="showExtraKeysButton" class="noVNC_status_button">
@@ -153,7 +138,7 @@
             </div>
         </div>
 
-        <div id="noVNC_status">Loading</div>
+        <div id="noVNC_status"></div>
 
         <!--noVNC Buttons-->
         <div class="noVNC-buttons-right">
@@ -166,6 +151,9 @@
             <input type="image" alt="Clipboard" src="images/clipboard.png"
                 id="clipboardButton" class="noVNC_status_button"
                 title="Clipboard" />
+            <input type="image" alt="Fullscreen" src="images/fullscreen.png"
+                id="fullscreenButton" class="noVNC_status_button"
+                title="Fullscreen" />
             <input type="image" alt="Settings" src="images/settings.png"
                 id="settingsButton" class="noVNC_status_button"
                 title="Settings" />
@@ -193,8 +181,8 @@
             <input id="descriptionButton" type="button" value="Close">
         </div>
 
-        <!-- Popup Status Panel -->
-        <div id="noVNC_popup_status_panel" class="">
+        <!-- Popup Status -->
+        <div id="noVNC_popup_status" class="">
         </div>
 
         <!-- Clipboard Panel -->
@@ -225,10 +213,17 @@
                     <li><input id="noVNC_clip" type="checkbox"> Clip to Window</li>
                     <li><input id="noVNC_shared" type="checkbox"> Shared Mode</li>
                     <li><input id="noVNC_view_only" type="checkbox"> View Only</li>
-                    <!-- comment path param
-					<li><input id="noVNC_path" type="input" value="websockify"> Path</li>
-                    -->
-					<li><input id="noVNC_repeaterID" type="input" value=""> Repeater ID</li>
+                    <hr>
+                    <!--li><input id="noVNC_path" type="input" value="websockify"> Path</li-->
+                    <li><label>
+                        <select id="noVNC_resize" name="vncResize">
+                            <option value="off">None</option>
+                            <option value="scale">Local Scaling</option>
+                            <option value="downscale">Local Downscaling</option>
+                            <option value="remote">Remote Resizing</option>
+                        </select> Scaling Mode</label>
+                    </li>
+                    <li><input id="noVNC_repeaterID" type="input" value=""> Repeater ID</li>
                     <hr>
                     <!-- Stylesheet selection dropdown -->
                     <li><label><strong>Style: </strong>
@@ -251,11 +246,10 @@
         <!-- Connection Panel -->
         <div id="noVNC_controls" class="triangle-right top">
             <ul>
-                <!-- comment host,port param
-				<li><label><strong>Host: </strong><input id="noVNC_host" /></label></li>
-                <li><label><strong>Port: </strong><input id="noVNC_port" /></label></li>
-                -->
-				<li><label><strong>Password: </strong><input id="noVNC_password" type="password" /></label></li>
+                <!--li><label><strong>Host: </strong><input id="noVNC_host" /></label></li>
+                <li><label><strong>Port: </strong><input id="noVNC_port" /></label></li-->
+                <li><label><strong>Password: </strong><input id="noVNC_password" type="password" /></label></li>
+                <!--li><label><strong>Token: </strong><input id="noVNC_token"/></label></li-->
                 <li><input id="noVNC_connect_button" type="button" value="Connect"></li>
             </ul>
         </div>
@@ -273,14 +267,10 @@
 
                 <h1 id="noVNC_logo"><span>peer</span><br />VNC</h1>
 
-                <!-- fullscreen mode -->
-                <button ng-click="goFullscreen()" ng-hide="isFullscreen" style="color: blue">
-                    Enable VNC Fullscreen
-                </button>
 
                 <!-- HTML5 Canvas -->
-                <div id="noVNC_container" fullscreen="isFullscreen">
-                    <canvas id="noVNC_canvas" width="640px" height="20px">
+                <div id="noVNC_container">
+                    <canvas id="noVNC_canvas" width="0" height="0">
                                 Canvas not supported.
                     </canvas>
                 </div>
