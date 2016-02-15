@@ -58,7 +58,7 @@ XK_KP_Up =                       0xff97,
 XK_KP_Right =                    0xff98,
 XK_KP_Down =                     0xff99,
 XK_KP_Prior =                    0xff9a,
-XK_KP_Page_Up =                  0xff9a
+XK_KP_Page_Up =                  0xff9a,
 XK_KP_Next =                     0xff9b,
 XK_KP_Page_Down =                0xff9b,
 XK_KP_End =                      0xff9c,
@@ -169,6 +169,8 @@ XK_Super_L =                     0xffeb, /* Left super */
 XK_Super_R =                     0xffec, /* Right super */
 XK_Hyper_L =                     0xffed, /* Left hyper */
 XK_Hyper_R =                     0xffee, /* Right hyper */
+
+XK_ISO_Level3_Shift =            0xfe03, /* AltGr */
 
 /*
  * Latin 1
