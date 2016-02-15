@@ -30,20 +30,20 @@ html {
   padding-bottom:8px;
 }
 
-#noVNC_host {
+/*#noVNC_host {
   width:150px;
 }
 #noVNC_port {
   width: 80px;
-}
+}*/
 #noVNC_password {
   width: 150px;
 }
 #noVNC_encrypt {
 }
-#noVNC_path {
+/*#noVNC_path {
   width: 100px;
-}
+}*/
 #noVNC_connect_button {
   width: 110px;
   float:right;
@@ -57,6 +57,9 @@ html {
   display: none;
 }
 #sendCtrlAltDelButton {
+  display: none;
+}
+#fullscreenButton {
   display: none;
 }
 #noVNC_xvp_buttons {
@@ -112,28 +115,34 @@ html {
 
 /* Do not set width/height for VNC_screen or VNC_canvas or incorrect
  * scaling will occur. Canvas resizes to remote VNC settings */
-#noVNC_screen_pad {
-  margin: 0px;
-  padding: 0px;
-  height: 36px;
-}
 #noVNC_screen {
-  text-align: center;
   display: table;
   width:100%;
   height:100%;
-  background-color:#363836;
+  background-color:#313131;
   border-bottom-right-radius: 800px 600px;
   /*border-top-left-radius: 800px 600px;*/
 }
 
-#noVNC_container, #noVNC_canvas {
+#noVNC_container {
+  display: none;
+  position: absolute;
   margin: 0px;
   padding: 0px;
+  bottom: 0px;
+  top: 36px; /* the height of the control bar */
+  left: 0px;
+  right: 0px;
+  width: auto;
+  height: auto;
 }
 
 #noVNC_canvas {
-  left: 0px;
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 #VNC_clipboard_clear_button {
@@ -182,7 +191,7 @@ html {
   border-radius:10px;
 }
 
-#noVNC_popup_status_panel {
+#noVNC_popup_status {
   display:none;
   position: fixed;
   z-index: 1;
@@ -232,6 +241,7 @@ html {
   position: relative;
   left: -40px;
   z-index: -1;
+  ime-mode: disabled;
 }
 
 /*
@@ -313,6 +323,10 @@ html {
  /*box-shadow:inset 0.4px 0.4px 0.4px #000000;*/
 }
 
+.noVNC_status_button:disabled {
+  opacity: 0.4;
+}
+
 
 /*Settings Bubble*/
 .triangle-right {
@@ -375,9 +389,9 @@ html {
 }
 
 #noVNC_logo {
-  margin-top: 180px;
+  margin-top: 170px;
   margin-left: 10px;
-  color:green;
+  color:yellow;
   text-align:left;
   font-family: 'Orbitron', 'OrbitronTTF', sans-serif;
   line-height:90%;
@@ -391,7 +405,7 @@ html {
 
 
 #noVNC_logo span{
-  color:yellow;
+  color:green;
 }
 
 /* ----------------------------------------
