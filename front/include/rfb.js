@@ -306,7 +306,7 @@ var RFB;
 
         clipboardPasteFrom: function (text) {
             if (this._rfb_state !== 'normal') { return; }
-            RFB.messages.clientCutText(this._sock, text);
+            RFB.messages.clientCutUTF8Text(this._sock, text);
             this._sock.flush();
         },
 
@@ -1321,6 +1321,53 @@ var RFB;
             }
 
             sock._sQlen += 8 + n;
+        },
+
+        // UTF-8 compatible string
+        clientCutUTF8Text: function (sock, text) {
+            var buff = sock._sQ;
+            var offset = sock._sQlen;
+
+            buff[offset] = 6; // msg-type
+
+            buff[offset + 1] = 0; // padding
+            buff[offset + 2] = 0; // padding
+            buff[offset + 3] = 0; // padding
+
+            var n = text.length;
+
+            for (var i = 0, idx = 0; i < n; i++) {
+                var code = text.codePointAt(i);
+                ///console.log("clientCutText,codePoint: %d", code);
+
+                // check utf8 
+                if (code > 0xffff) {
+                    buff[offset + 8 + idx] = ((code >> 18) & 0x07) | 0xf0; idx ++;
+                    buff[offset + 8 + idx] = ((code >> 12) & 0x3f) | 0x80; idx ++;
+                    buff[offset + 8 + idx] = ((code >>  6) & 0x3f) | 0x80; idx ++;
+                    buff[offset + 8 + idx] = ((code >>  0) & 0x3f) | 0x80; idx ++;
+                } else 
+                if (code > 0x7ff) {
+                    buff[offset + 8 + idx] = ((code >> 12) & 0x0f) | 0xe0; idx ++;
+                    buff[offset + 8 + idx] = ((code >>  6) & 0x3f) | 0x80; idx ++;
+                    buff[offset + 8 + idx] = ((code >>  0) & 0x3f) | 0x80; idx ++;
+                } else 
+                if (code > 0x7f) {
+                    buff[offset + 8 + idx] = ((code >>  6) & 0x1f) | 0xc0; idx ++;
+                    buff[offset + 8 + idx] = ((code >>  0) & 0x3f) | 0x80; idx ++;
+                } else {
+                    buff[offset + 8 + idx] = ((code >>  0) & 0x7f) | 0x00; idx ++;
+                }
+            }
+            // ???append '\0' for c string
+            ///buff[offset + 8 + idx] = 0; idx ++;
+
+            buff[offset + 4] = idx >> 24;
+            buff[offset + 5] = idx >> 16;
+            buff[offset + 6] = idx >> 8;
+            buff[offset + 7] = idx;
+
+            sock._sQlen += 8 + idx;
         },
 
         pixelFormat: function (sock, bpp, depth, true_color) {
