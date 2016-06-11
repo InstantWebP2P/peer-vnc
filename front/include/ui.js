@@ -545,7 +545,7 @@ var UI;
                 UI.updateSetting('resize');
                 UI.updateSetting('shared');
                 UI.updateSetting('view_only');
-                UI.updateSetting('path');
+                ///UI.updateSetting('path');
                 UI.updateSetting('repeaterID');
                 UI.updateSetting('stylesheet');
                 UI.updateSetting('logging');
