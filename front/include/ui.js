@@ -693,7 +693,7 @@ var UI;
                 $D('noVNC_controls').style.display = "block";
                 $D('noVNC_connectPanel_button').className = "noVNC_status_button_selected";
                 UI.connSettingsOpen = true;
-                $D('noVNC_setting_host').focus();
+                ///$D('noVNC_setting_host').focus();
             }
         },
 
