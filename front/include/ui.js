@@ -309,7 +309,7 @@ var UI;
             $D('noVNC_setting_resize').disabled = connected;
             $D('noVNC_setting_shared').disabled = connected;
             $D('noVNC_setting_view_only').disabled = connected;
-            $D('noVNC_setting_path').disabled = connected;
+            ///$D('noVNC_setting_path').disabled = connected;
             $D('noVNC_setting_repeaterID').disabled = connected;
 
             if (connected) {
