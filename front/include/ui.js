@@ -701,11 +701,11 @@ var UI;
             UI.closeSettingsMenu();
             UI.toggleConnectPanel();
 
-            var host = $D('noVNC_setting_host').value;
-            var port = $D('noVNC_setting_port').value;
+            var host = window.location.hostname; ///$D('noVNC_setting_host').value;
+            var port = window.location.port; ///$D('noVNC_setting_port').value;
             var password = $D('noVNC_setting_password').value;
-            var token = $D('noVNC_setting_token').value;
-            var path = $D('noVNC_setting_path').value;
+            var token = null; ///$D('noVNC_setting_token').value;
+            var path = window.location.pathname.substr(1); ///$D('noVNC_setting_path').value;
 
             //if token is in path then ignore the new token variable
             if (token) {
