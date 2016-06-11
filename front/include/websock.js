@@ -242,7 +242,7 @@ var typedArrayToString = Utf8ArrayToString;
             }
 
             if (this._websocket.bufferedAmount < this.maxBufferedAmount) {
-                if (this._sQlen > 0) {
+                if (this._sQlen > 0 && this._websocket.readyState === WebSocket.OPEN) {
                     this._websocket.send(this._encode_message());
                     this._sQlen = 0;
                 }
