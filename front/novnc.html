@@ -75,11 +75,13 @@
                 if (files && files.length) {
                     usSpinnerService.spin('spinner-upload');
 
-                    for (var i = 0; i < files.length; i++) {
-                        var file = files[i];
+                        // html5 multiple file upload
                         $upload.upload({
                             url: 'upload',
-                            file: file
+                            data: {
+                                files: files,
+                            }
+                            ///file: file
                         })/*.progress(function (evt) {
                             var progressPercentage = parseInt(100.0 * evt.loaded / evt.total);
                             $log.info('progress: ' + progressPercentage + '% ' + evt.config.file.name);
@@ -91,7 +93,6 @@
 
                             $log.info('file ' + config.file.name + 'uploaded. Response: ' + JSON.stringify(data));
                         });
-                    }
                 }
             };
         }]);
