@@ -59,6 +59,7 @@
     <script src="dist/angular-file-upload-shim.min.js"></script> 
     <script src="dist/angular-file-upload.min.js"></script>
 
+    <!-- controler --> 
     <script type="text/javascript"> 
         //inject angular file upload directives and services.
         var app = angular.module('peerVNC', ['angularFileUpload', 'cgNotify', 'angularSpinner']);
@@ -73,26 +74,26 @@
 
             $scope.upload = function (files) {
                 if (files && files.length) {
+                    var uploadCnt = files.length;
                     usSpinnerService.spin('spinner-upload');
 
-                        // html5 multiple file upload
+                    for (var i = 0; i < files.length; i ++) {
+                        var file = files[i];
+
                         $upload.upload({
                             url: 'upload',
-                            data: {
-                                files: files,
-                            }
-                            ///file: file
+                            file: file,
                         })/*.progress(function (evt) {
                             var progressPercentage = parseInt(100.0 * evt.loaded / evt.total);
                             $log.info('progress: ' + progressPercentage + '% ' + evt.config.file.name);
                         })*/.success(function (data, status, headers, config) {
-                            usSpinnerService.stop('spinner-upload');
-
+                            if (--uploadCnt === 0) usSpinnerService.stop('spinner-upload');
+                  
                             // notify fileupload success
                             notify('filepath on server: ' + data.file.newpath);
-
                             $log.info('file ' + config.file.name + 'uploaded. Response: ' + JSON.stringify(data));
                         });
+                    }
                 }
             };
         }]);
