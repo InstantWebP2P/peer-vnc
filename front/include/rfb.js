@@ -1491,7 +1491,14 @@ var RFB;
             var n = text.length;
 
             for (var i = 0, idx = 0; i < n; i++) {
-                var code = text.codePointAt(i);
+                var code = 0;
+
+                // check codePointAt vs charCodeAt
+                if (text.codePointAt) {
+                    code = text.codePointAt(i);
+                } else {
+                    code = text.charCodeAt(i);
+                }
                 ///console.log("clientCutText,codePoint: %d", code);
 
                 // check utf8 
