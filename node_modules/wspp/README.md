@@ -3,12 +3,12 @@ Fork of `ws` for p2p streaming over udp
 
 # ws: a node.js websocket library
 
-[![Build Status](https://travis-ci.org/einaros/ws.svg?branch=master)](https://travis-ci.org/einaros/ws)
+[![Build Status](https://travis-ci.org/websockets/ws.svg?branch=master)](https://travis-ci.org/websockets/ws)
 
 `ws` is a simple to use WebSocket implementation, up-to-date against RFC-6455,
 and [probably the fastest WebSocket library for node.js][archive].
 
-Passes the quite extensive Autobahn test suite. See http://einaros.github.com/ws
+Passes the quite extensive Autobahn test suite. See http://websockets.github.com/ws
 for the full reports.
 
 ## Protocol support
@@ -84,9 +84,9 @@ var WebSocketServer = require('ws').Server
   , wss = new WebSocketServer({ port: 8080 });
 
 wss.broadcast = function broadcast(data) {
-  for(var i in this.clients) {
-    this.clients[i].send(data);
-  }
+  wss.clients.forEach(function each(client) {
+    client.send(data);
+  });
 };
 ```
 
@@ -100,7 +100,7 @@ ws.send('something');
 // callback. The callback is also the only way of being notified that data has
 // actually been sent.
 ws.send('something', function ack(error) {
-  // if error is null, the send has been completed,
+  // if error is not defined, the send has been completed,
   // otherwise the error object will indicate what failed.
 });
 
@@ -157,6 +157,10 @@ make test
 ## API Docs
 
 See the doc/ directory for Node.js-like docs for the ws classes.
+
+## Changelog
+
+We're using the GitHub `releases` for changelog entries.
 
 ## License
 
