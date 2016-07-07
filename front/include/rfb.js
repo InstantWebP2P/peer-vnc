@@ -1489,16 +1489,11 @@ var RFB;
             buff[offset + 3] = 0; // padding
 
             var n = text.length;
+            var codeAt = text.codePointAt ? text.codePointAt : text.charCodeAt;
 
             for (var i = 0, idx = 0; i < n; i++) {
-                var code = 0;
+                var code = codeAt.call(text, i);
 
-                // check codePointAt vs charCodeAt
-                if (text.codePointAt) {
-                    code = text.codePointAt(i);
-                } else {
-                    code = text.charCodeAt(i);
-                }
                 ///console.log("clientCutText,codePoint: %d", code);
 
                 // check utf8 
