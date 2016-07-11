@@ -911,7 +911,8 @@ var RFB;
             /* Connection name/title */
             var name_length = this._sock.rQshift32();
             if (this._sock.rQwait('server init name', name_length, 24)) { return false; }
-            this._fb_name = Util.decodeUTF8(this._sock.rQshiftStr(name_length));
+            ///this._fb_name = Util.decodeUTF8(this._sock.rQshiftStr(name_length));
+            this._fb_name = ((this._sock.rQshiftStr(name_length)) || 'DeskTop').toString();
 
             if (this._rfb_tightvnc) {
                 if (this._sock.rQwait('TightVNC extended server init header', 8, 24 + name_length)) { return false; }

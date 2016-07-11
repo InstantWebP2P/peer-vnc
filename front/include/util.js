@@ -360,7 +360,8 @@ Util.set_defaults = function (obj, conf, defaults) {
  */
 Util.decodeUTF8 = function (utf8string) {
     "use strict";
-    return decodeURIComponent(escape(utf8string));
+    ///return decodeURIComponent(escape(utf8string));
+    return (utf8string || '').toString();
 };
 
 
