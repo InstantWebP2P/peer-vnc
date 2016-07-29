@@ -28,12 +28,10 @@ var webServer = module.exports.webServer = function(options) {
 
 	app.use(function(req, res, next){
 	    if (vtokenregex.test(req.url)) {
-	        ///res.writeHead(301, {'location': req.url.replace(vtokenregex, '')});
-	        ///res.end();
-                req.url = req.url.replace(vtokenregex, '');
-	    } 
-	
-            next();
+	        res.writeHead(301, {'location': req.url.replace(vtokenregex, '')});
+	        res.end();
+                ///req.url = req.url.replace(vtokenregex, '');
+	    } else next();
 	});
 
 	// basic-auth middleware
