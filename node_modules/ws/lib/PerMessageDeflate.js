@@ -12,6 +12,10 @@ PerMessageDeflate.extensionName = 'permessage-deflate';
  */
 
 function PerMessageDeflate(options, isServer) {
+  if (this instanceof PerMessageDeflate === false) {
+    throw new TypeError("Classes can't be function-called");
+  }
+
   this._options = options || {};
   this._isServer = !!isServer;
   this._inflate = null;
@@ -62,6 +66,31 @@ PerMessageDeflate.prototype.accept = function(paramsList) {
 
   this.params = params;
   return params;
+};
+
+/**
+ * Releases all resources used by the extension
+ *
+ * @api public
+ */
+
+PerMessageDeflate.prototype.cleanup = function() {
+  if (this._inflate) {
+    if (this._inflate.writeInProgress) {
+      this._inflate.pendingClose = true;
+    } else {
+      if (this._inflate.close) this._inflate.close();
+      this._inflate = null;
+    }
+  }
+  if (this._deflate) {
+    if (this._deflate.writeInProgress) {
+      this._deflate.pendingClose = true;
+    } else {
+      if (this._deflate.close) this._deflate.close();
+      this._deflate = null;
+    }
+  }
 };
 
 /**
@@ -203,6 +232,7 @@ PerMessageDeflate.prototype.decompress = function (data, fin, callback) {
       windowBits: 'number' === typeof maxWindowBits ? maxWindowBits : DEFAULT_WINDOW_BITS
     });
   }
+  this._inflate.writeInProgress = true;
 
   var self = this;
   var buffers = [];
@@ -227,9 +257,12 @@ PerMessageDeflate.prototype.decompress = function (data, fin, callback) {
   }
 
   function cleanup() {
+    if (!self._inflate) return;
     self._inflate.removeListener('error', onError);
     self._inflate.removeListener('data', onData);
-    if (fin && self.params[endpoint + '_no_context_takeover']) {
+    self._inflate.writeInProgress = false;
+    if ((fin && self.params[endpoint + '_no_context_takeover']) || self._inflate.pendingClose) {
+      if (self._inflate.close) self._inflate.close();
       self._inflate = null;
     }
   }
@@ -252,6 +285,7 @@ PerMessageDeflate.prototype.compress = function (data, fin, callback) {
       memLevel: this._options.memLevel || DEFAULT_MEM_LEVEL
     });
   }
+  this._deflate.writeInProgress = true;
 
   var self = this;
   var buffers = [];
@@ -277,13 +311,15 @@ PerMessageDeflate.prototype.compress = function (data, fin, callback) {
   }
 
   function cleanup() {
+    if (!self._deflate) return;
     self._deflate.removeListener('error', onError);
     self._deflate.removeListener('data', onData);
-    if (fin && self.params[endpoint + '_no_context_takeover']) {
+    self._deflate.writeInProgress = false;
+    if ((fin && self.params[endpoint + '_no_context_takeover']) || self._deflate.pendingClose) {
+      if (self._deflate.close) self._deflate.close();
       self._deflate = null;
     }
   }
 };
 
 module.exports = PerMessageDeflate;
-

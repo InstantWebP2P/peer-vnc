@@ -16,6 +16,10 @@ var events = require('events')
  */
 
 function Sender(socket, extensions) {
+  if (this instanceof Sender === false) {
+    throw new TypeError("Classes can't be function-called");
+  }
+
   events.EventEmitter.call(this);
 
   this._socket = socket;
@@ -151,6 +155,14 @@ Sender.prototype.frameAndSend = function(opcode, data, finalFragment, maskData, 
     if (data && (typeof data.byteLength !== 'undefined' || typeof data.buffer !== 'undefined')) {
       data = getArrayBuffer(data);
     } else {
+      //
+      // If people want to send a number, this would allocate the number in
+      // bytes as memory size instead of storing the number as buffer value. So
+      // we need to transform it to string in order to prevent possible
+      // vulnerabilities / memory attacks.
+      //
+      if (typeof data === 'number') data = data.toString();
+
       data = new Buffer(data);
     }
   }
@@ -267,6 +279,9 @@ Sender.prototype.flush = function() {
 
 Sender.prototype.applyExtensions = function(data, fin, compress, callback) {
   if (compress && data) {
+    if ((data.buffer || data) instanceof ArrayBuffer) {
+      data = getArrayBuffer(data);
+    }
     this.extensions[PerMessageDeflate.extensionName].compress(data, fin, callback);
   } else {
     callback(null, data);

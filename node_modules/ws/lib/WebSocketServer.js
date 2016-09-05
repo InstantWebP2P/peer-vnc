@@ -20,6 +20,10 @@ var util = require('util')
  */
 
 function WebSocketServer(options, callback) {
+  if (this instanceof WebSocketServer === false) {
+    return new WebSocketServer(options, callback);
+  }
+
   events.EventEmitter.call(this);
 
   options = new Options({
@@ -43,9 +47,14 @@ function WebSocketServer(options, callback) {
 
   if (options.isDefinedAndNonNull('port')) {
     this._server = http.createServer(function (req, res) {
-      res.writeHead(200, {'Content-Type': 'text/plain'});
-      res.end('Not implemented');
+      var body = http.STATUS_CODES[426];
+      res.writeHead(426, {
+        'Content-Length': body.length,
+        'Content-Type': 'text/plain'
+      });
+      res.end(body);
     });
+    this._server.allowHalfOpen = false;
     this._server.listen(options.value.port, options.value.host, callback);
     this._closeServer = function() { if (self._server) self._server.close(); };
   }
@@ -98,7 +107,7 @@ util.inherits(WebSocketServer, events.EventEmitter);
  * @api public
  */
 
-WebSocketServer.prototype.close = function() {
+WebSocketServer.prototype.close = function(callback) {
   // terminate all associated clients
   var error = null;
   try {
@@ -127,7 +136,10 @@ WebSocketServer.prototype.close = function() {
   finally {
     delete this._server;
   }
-  if (error) throw error;
+  if(callback)
+    callback(error);
+  else if(error)
+    throw error;
 }
 
 /**

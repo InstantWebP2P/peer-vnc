@@ -16,13 +16,17 @@ var util = require('util')
  */
 
 function Receiver (extensions) {
+  if (this instanceof Receiver === false) {
+    throw new TypeError("Classes can't be function-called");
+  }
+
   // memory pool for fragmented messages
   var fragmentedPoolPrevUsed = -1;
   this.fragmentedBufferPool = new BufferPool(1024, function(db, length) {
     return db.used + length;
   }, function(db) {
     return fragmentedPoolPrevUsed = fragmentedPoolPrevUsed >= 0 ?
-      (fragmentedPoolPrevUsed + db.used) / 2 :
+      Math.ceil((fragmentedPoolPrevUsed + db.used) / 2) :
       db.used;
   });
 
@@ -32,7 +36,7 @@ function Receiver (extensions) {
     return db.used + length;
   }, function(db) {
     return unfragmentedPoolPrevUsed = unfragmentedPoolPrevUsed >= 0 ?
-      (unfragmentedPoolPrevUsed + db.used) / 2 :
+      Math.ceil((unfragmentedPoolPrevUsed + db.used) / 2) :
       db.used;
   });
 
@@ -241,7 +245,7 @@ Receiver.prototype.processPacket = function (data) {
 
 Receiver.prototype.endPacket = function() {
   if (!this.state.fragmentedOperation) this.unfragmentedBufferPool.reset(true);
-  else if (this.state.lastFragment) this.fragmentedBufferPool.reset(false);
+  else if (this.state.lastFragment) this.fragmentedBufferPool.reset(true);
   this.expectOffset = 0;
   this.expectBuffer = null;
   this.expectHandler = null;

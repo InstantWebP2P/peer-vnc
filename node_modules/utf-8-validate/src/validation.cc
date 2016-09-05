@@ -106,33 +106,33 @@ public:
 
   static void Initialize(v8::Handle<v8::Object> target)
   {
-    NanScope();
-    Local<FunctionTemplate> t = NanNew<FunctionTemplate>(New);
+    Nan::HandleScope scope;
+    Local<FunctionTemplate> t = Nan::New<FunctionTemplate>(New);
     t->InstanceTemplate()->SetInternalFieldCount(1);
-    NODE_SET_METHOD(t, "isValidUTF8", Validation::IsValidUTF8);
-    target->Set(NanNew<String>("Validation"), t->GetFunction());
+    Nan::SetMethod(t, "isValidUTF8", Validation::IsValidUTF8);
+    Nan::Set(target, Nan::New<String>("Validation").ToLocalChecked(), t->GetFunction());
   }
 
 protected:
 
   static NAN_METHOD(New)
   {
-    NanScope();
+    Nan::HandleScope scope;
     Validation* validation = new Validation();
-    validation->Wrap(args.This());
-    NanReturnValue(args.This());
+    validation->Wrap(info.This());
+    info.GetReturnValue().Set(info.This());
   }
 
   static NAN_METHOD(IsValidUTF8)
   {
-    NanScope();
-    if (!Buffer::HasInstance(args[0])) {
-      return NanThrowTypeError("First argument needs to be a buffer");
+    Nan::HandleScope scope;
+    if (!Buffer::HasInstance(info[0])) {
+      return Nan::ThrowTypeError("First argument needs to be a buffer");
     }
-    Local<Object> buffer_obj = args[0]->ToObject();
+    Local<Object> buffer_obj = info[0]->ToObject();
     char *buffer_data = Buffer::Data(buffer_obj);
     size_t buffer_length = Buffer::Length(buffer_obj);
-    NanReturnValue(is_valid_utf8(buffer_length, buffer_data) == 1 ? NanTrue() : NanFalse());
+    info.GetReturnValue().Set(is_valid_utf8(buffer_length, buffer_data) == 1 ? Nan::True() : Nan::False());
   }
 };
 #if !NODE_VERSION_AT_LEAST(0,10,0)
@@ -140,7 +140,7 @@ extern "C"
 #endif
 void init (Handle<Object> target)
 {
-  NanScope();
+  Nan::HandleScope scope;
   Validation::Initialize(target);
 }
 

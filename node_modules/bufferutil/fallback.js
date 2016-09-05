@@ -8,20 +8,22 @@
 
 module.exports.BufferUtil = {
   merge: function(mergedBuffer, buffers) {
-    var offset = 0;
-
-    for (var i = 0, l = buffers.length; i < l; ++i) {
+    for (var i = 0, offset = 0, l = buffers.length; i < l; ++i) {
       var buf = buffers[i];
+
       buf.copy(mergedBuffer, offset);
       offset += buf.length;
     }
   },
+
   mask: function(source, mask, output, offset, length) {
-    var maskNum = mask.readUInt32LE(0, true);
-    var i = 0;
+    var maskNum = mask.readUInt32LE(0, true)
+      , i = 0
+      , num;
 
     for (; i < length - 3; i += 4) {
-      var num = maskNum ^ source.readUInt32LE(i, true);
+      num = maskNum ^ source.readUInt32LE(i, true);
+
       if (num < 0) num = 4294967296 + num;
       output.writeUInt32LE(num, offset + i, true);
     }
@@ -32,13 +34,16 @@ module.exports.BufferUtil = {
       case 1: output[offset + i] = source[i] ^ mask[0];
     }
   },
+
   unmask: function(data, mask) {
-    var maskNum = mask.readUInt32LE(0, true);
-    var length = data.length;
-    var i = 0;
+    var maskNum = mask.readUInt32LE(0, true)
+      , length = data.length
+      , i = 0
+      , num;
 
     for (; i < length - 3; i += 4) {
-      var num = maskNum ^ data.readUInt32LE(i, true);
+      num = maskNum ^ data.readUInt32LE(i, true);
+
       if (num < 0) num = 4294967296 + num;
       data.writeUInt32LE(num, i, true);
     }
