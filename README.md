@@ -54,7 +54,7 @@ Access to VNC desktop from anywhere using web browser
     4. run over STUN with iwebpp.io-stun-proxy, just embed 'vlocal.' as sub-domain in origin vURL, 
        like https://41c522dab4ae47f9.vurl.vlocal.iwebpp.com:51688/vtoken/516c97b3070de2e1/peervnc
        
-    5. use peer-vnc-direct binary without P2P, like  ./bin/peer-vnc-direct -t 192.168.1.1:5900 -s acl -a srv -b user:pass -d /auto/vshare/
+    5. use peer-vnc-direct binary without P2P, like  ./bin/peer-vnc-direct -t 192.168.1.1:5900 -s acl -a srv -b user:pass -d /auto/vshare/
        VNC                   Proxy URL(please open it on browser)
        192.168.1.1:5900        https://41c522dab4ae47f9.vurl.iwebpp.com:51688/192.168.1.1-5900 
 
