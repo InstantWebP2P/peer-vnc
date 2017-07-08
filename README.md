@@ -61,6 +61,8 @@ Access to VNC desktop from anywhere using web browser
 ### Support us
 * donate code, bug report, test case
 * donate coffee https://gumroad.com/l/iwebpp
+* scan QRcode to follow our WeChat 
+
 
 <br/>
 ### License
