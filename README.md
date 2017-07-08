@@ -62,7 +62,7 @@ Access to VNC desktop from anywhere using web browser
 * donate code, bug report, test case
 * donate coffee https://gumroad.com/l/iwebpp
 * scan QRcode to follow our WeChat 
-
+* ![](../master/cloudgua.jpg)
 
 <br/>
 ### License
