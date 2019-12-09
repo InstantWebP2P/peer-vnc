@@ -59,9 +59,8 @@ Access to VNC desktop from anywhere using web browser
        192.168.1.1:5900        https://41c522dab4ae47f9.vurl.iwebpp.com:51688/192.168.1.1-5900 
 
 ### Support us
-* donate code, bug report, test case
-* donate coffee https://gumroad.com/l/iwebpp
-* 远程工作云办公联盟 QQ 群号: 463651269
+
+* Welcome contributing on document, codes, tests and issues
 
 <br/>
 ### License
