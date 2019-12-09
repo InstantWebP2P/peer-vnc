@@ -17,18 +17,17 @@ Access to VNC desktop from anywhere using web browser
 * Support UTF-8 clipboard
 
 ### Install manually
-* npm install peer-vnc, or git clone https://github.com/InstantWebP2P/peer-vnc.git && cd peer-vnc && npm install
-* peer-vnc depend on node-httpp, please npm install httpp-binary.if the binay didn't work, just build it from source:
-  https://github.com/InstantWebP2P/node-httpp
+* npm install peer-vnc, or git clone [peer-vnc](https://github.com/InstantWebP2P/peer-vnc.git) && cd peer-vnc && npm install
+* peer-vnc depend on node-httpp, please npm install httpp-binary.if the binay didn't work, just build it from [node-httpp repo](https://github.com/InstantWebP2P/node-httpp)
 
 ### Install with prebuilt packages, just download and unzip it
-* windows package - https://github.com/InstantWebP2P/peer-vnc/archive/pkg-release-windows.zip
-* OSx package - https://github.com/InstantWebP2P/peer-vnc/archive/pkg-release-osx.zip
-* RPI package - https://github.com/InstantWebP2P/peer-vnc/archive/pkg-release-rpi.zip
-* Linux X86_64 package - https://github.com/InstantWebP2P/peer-vnc/archive/pkg-release-linux64.zip
-* Linux X86 package - https://github.com/InstantWebP2P/peer-vnc/archive/pkg-release-linux32.zip
+* [windows package](https://github.com/InstantWebP2P/peer-vnc/archive/pkg-release-windows.zip)
+* [OSx package](https://github.com/InstantWebP2P/peer-vnc/archive/pkg-release-osx.zip)
+* [RPI package](https://github.com/InstantWebP2P/peer-vnc/archive/pkg-release-rpi.zip)
+* [Linux X86_64 package](https://github.com/InstantWebP2P/peer-vnc/archive/pkg-release-linux64.zip)
+* [Linux X86 package](https://github.com/InstantWebP2P/peer-vnc/archive/pkg-release-linux32.zip)
 
-### Discussion group: https://groups.google.com/d/forum/iwebpp
+### [Discussion group](https://groups.google.com/d/forum/iwebpp)
 
 ### Usage/API:
 
