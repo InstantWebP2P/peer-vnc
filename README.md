@@ -61,7 +61,7 @@ Access to VNC desktop from anywhere using web browser
 
 * Welcome contributing on document, codes, tests and issues
 
-<br/>
+
 ### License
 
 (The MIT License)
