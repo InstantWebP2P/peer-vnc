@@ -1,15 +1,15 @@
 // noVNC proxy implementation with iWebPP.io
-// Copyright (c) 2013 Tom Zhou<iwebpp@gmail.com>
+// Copyright (c) 2013-present Tom Zhou<iwebpp@gmail.com>
 
-var WEBPP = require('iwebpp.io'),
-    noVNC = require('./novnc'),
-    http = require('http'),
-    https = require('https'),
-    WebSocket = require('wspp'),
+var WEBPP           = require('iwebpp.io'),
+    noVNC           = require('./novnc'),
+    http            = require('http'),
+    https           = require('https'),
+    WebSocket       = require('wspp'),
     WebSocketServer = WebSocket.Server,
-    Connect = require('connect'),
-    OS = require('os'),
-    UDT = require('udt');
+    Connect         = require('connect'),
+    OS              = require('os'),
+    UDT             = require('udt');
 
 
 // Debug level
@@ -68,11 +68,11 @@ var Proxy = module.exports = function(vncs, fn, options){
         srvinfo: {
             timeout: 20,
             endpoints: (options && options.endpoints) || [
-                {ip: 'iwebpp.com', port: 51686},
-                {ip: 'iwebpp.com', port: 51868}
+                {ip: 'httpp.aiworkspace.com', port: 51686},
+                {ip: 'httpp.aiworkspace.com', port: 51868}
             ],
             turn: (options && options.turn) || [
-                {ip: 'iwebpp.com', agent: 51866, proxy: 51688}
+                {ip: 'httpp.aiworkspace.com', agent: 51866, proxy: 51688}
             ]
         },
         
