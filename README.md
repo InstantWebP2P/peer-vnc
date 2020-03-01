@@ -17,8 +17,9 @@ Access to VNC desktop from anywhere using web browser
 * Support UTF-8 clipboard
 
 ### Install manually
-* npm install peer-vnc, or git clone [peer-vnc](https://github.com/InstantWebP2P/peer-vnc.git) && cd peer-vnc && npm install
+
 * peer-vnc depend on node-httpp, please build it from repo [node-httpp](https://github.com/InstantWebP2P/node-httpp)
+* npm install peer-vnc, or git clone [peer-vnc](https://github.com/InstantWebP2P/peer-vnc.git) && cd peer-vnc && npm install
 * setup your own iWebPP.io backend controller services refer to [iWebPP.io-controller](https://github.com/InstantWebP2P/iwebpp.io-controller)
 
 ### Install with prebuilt packages, just download and unzip it
