@@ -68,11 +68,11 @@ var Proxy = module.exports = function(vncs, fn, options){
         srvinfo: {
             timeout: 20,
             endpoints: (options && options.endpoints) || [
-                {ip: 'httpp.aiworkspace.com', port: 51686},
-                {ip: 'httpp.aiworkspace.com', port: 51868}
+                {ip: '51dese.com', port: 51686},
+                {ip: '51dese.com', port: 51868}
             ],
             turn: (options && options.turn) || [
-                {ip: 'httpp.aiworkspace.com', agent: 51866, proxy: 51688}
+                {ip: '51dese.com', agent: 51866, proxy: 51688}
             ]
         },
         
