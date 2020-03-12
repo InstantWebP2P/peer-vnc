@@ -911,7 +911,8 @@ var RFB;
             /* Connection name/title */
             var name_length = this._sock.rQshift32();
             if (this._sock.rQwait('server init name', name_length, 24)) { return false; }
-            this._fb_name = Util.decodeUTF8(this._sock.rQshiftStr(name_length));
+            ///this._fb_name = Util.decodeUTF8(this._sock.rQshiftStr(name_length));
+            this._fb_name = ((this._sock.rQshiftStr(name_length)) || 'DeskTop').toString();
 
             if (this._rfb_tightvnc) {
                 if (this._sock.rQwait('TightVNC extended server init header', 8, 24 + name_length)) { return false; }
@@ -1489,16 +1490,11 @@ var RFB;
             buff[offset + 3] = 0; // padding
 
             var n = text.length;
+            var codeAt = text.codePointAt ? text.codePointAt : text.charCodeAt;
 
             for (var i = 0, idx = 0; i < n; i++) {
-                var code = 0;
+                var code = codeAt.call(text, i);
 
-                // check codePointAt vs charCodeAt
-                if (text.codePointAt) {
-                    code = text.codePointAt(i);
-                } else {
-                    code = text.charCodeAt(i);
-                }
                 ///console.log("clientCutText,codePoint: %d", code);
 
                 // check utf8 
