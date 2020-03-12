@@ -30,15 +30,14 @@ var webServer = module.exports.webServer = function(options) {
 	    if (vtokenregex.test(req.url)) {
 	        res.writeHead(301, {'location': req.url.replace(vtokenregex, '')});
 	        res.end();
-	    } else {
-	        next();
-	    }
+                ///req.url = req.url.replace(vtokenregex, '');
+	    } else next();
 	});
 
 	// basic-auth middleware
 	if (auth) {
 		var basic = httpauth.basic({
-			realm: "iwebpp.com"
+			realm: "51dese.com"
 		}, function (username, password, callback) {
 			callback(username === auth.username && password === auth.password);
 		});
