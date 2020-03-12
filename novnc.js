@@ -37,7 +37,7 @@ var webServer = module.exports.webServer = function(options) {
 	// basic-auth middleware
 	if (auth) {
 		var basic = httpauth.basic({
-			realm: "iwebpp.com"
+			realm: "51dese.com"
 		}, function (username, password, callback) {
 			callback(username === auth.username && password === auth.password);
 		});
