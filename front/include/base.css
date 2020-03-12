@@ -1,7 +1,7 @@
 /*
  * noVNC base CSS
  * Copyright (C) 2012 Joel Martin
- * Copyright (C) 2013 Samuel Mannehed for Cendio AB
+ * Copyright (C) 2016 Samuel Mannehed for Cendio AB
  * noVNC is licensed under the MPL 2.0 (see LICENSE.txt)
  * This file is licensed under the 2-Clause BSD license (see LICENSE.txt).
  */
@@ -30,18 +30,18 @@ html {
   padding-bottom:8px;
 }
 
-#noVNC_host {
+#noVNC_setting_host {
   width:150px;
 }
-#noVNC_port {
+#noVNC_setting_port {
   width: 80px;
 }
-#noVNC_password {
+#noVNC_setting_password {
   width: 150px;
 }
-#noVNC_encrypt {
+#noVNC_setting_encrypt {
 }
-#noVNC_path {
+#noVNC_setting_path {
   width: 100px;
 }
 #noVNC_connect_button {
@@ -56,7 +56,10 @@ html {
 #noVNC_view_drag_button {
   display: none;
 }
-#sendCtrlAltDelButton {
+#noVNC_sendCtrlAltDel_button {
+  display: none;
+}
+#noVNC_fullscreen_button {
   display: none;
 }
 #noVNC_xvp_buttons {
@@ -74,13 +77,13 @@ html {
   position: relative;
 }
 
-.noVNC-buttons-left {
+.noVNC_buttons_left {
   float: left;
   z-index: 1;
   position: relative;
 }
 
-.noVNC-buttons-right {
+.noVNC_buttons_right {
   float:right;
   right: 0px;
   z-index: 2;
@@ -106,34 +109,41 @@ html {
   padding: 0px;
 }
 
-#noVNC_apply {
+#noVNC_settings_apply {
   float:right;
 }
 
-/* Do not set width/height for VNC_screen or VNC_canvas or incorrect
- * scaling will occur. Canvas resizes to remote VNC settings */
-#noVNC_screen_pad {
-  margin: 0px;
-  padding: 0px;
-  height: 36px;
-}
-#noVNC_screen {
-  text-align: center;
+#noVNC_container {
   display: table;
   width:100%;
   height:100%;
-  background-color:#363836;
+  background-color:#313131;
   border-bottom-right-radius: 800px 600px;
   /*border-top-left-radius: 800px 600px;*/
 }
 
-#noVNC_container, #noVNC_canvas {
+#noVNC_screen {
+  display: none;
+  position: absolute;
   margin: 0px;
   padding: 0px;
+  bottom: 0px;
+  top: 36px; /* the height of the control bar */
+  left: 0px;
+  right: 0px;
+  width: auto;
+  height: auto;
 }
 
+/* Do not set width/height for VNC_canvas or incorrect
+ * scaling will occur. Canvas size depends on remote VNC
+ * settings and noVNC settings. */
 #noVNC_canvas {
-  left: 0px;
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 #VNC_clipboard_clear_button {
@@ -182,7 +192,7 @@ html {
   border-radius:10px;
 }
 
-#noVNC_popup_status_panel {
+#noVNC_popup_status {
   display:none;
   position: fixed;
   z-index: 1;
@@ -223,7 +233,7 @@ html {
   right:85px;
 }
 
-#keyboardinput {
+#noVNC_keyboardinput {
   width:1px;
   height:1px;
   background-color:#fff;
@@ -232,6 +242,7 @@ html {
   position: relative;
   left: -40px;
   z-index: -1;
+  ime-mode: disabled;
 }
 
 /*
@@ -267,7 +278,7 @@ html {
 }
 
 /* Control bar */
-#noVNC-control-bar {
+#noVNC_control_bar {
   position:fixed;
   
   display:block;
@@ -311,6 +322,10 @@ html {
   filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#779ced', endColorstr='#2463df',GradientType=0 ); /* IE6-9 */
   background: linear-gradient(top, #779ced 0%,#3970e0 49%,#2160dd 51%,#2463df 100%); /* W3C */
  /*box-shadow:inset 0.4px 0.4px 0.4px #000000;*/
+}
+
+.noVNC_status_button:disabled {
+  opacity: 0.4;
 }
 
 
@@ -375,9 +390,9 @@ html {
 }
 
 #noVNC_logo {
-  margin-top: 180px;
+  margin-top: 170px;
   margin-left: 10px;
-  color:green;
+  color:yellow;
   text-align:left;
   font-family: 'Orbitron', 'OrbitronTTF', sans-serif;
   line-height:90%;
@@ -391,7 +406,7 @@ html {
 
 
 #noVNC_logo span{
-  color:yellow;
+  color:green;
 }
 
 /* ----------------------------------------
@@ -412,11 +427,11 @@ html {
   font-size: 180px;
 }
 
-.noVNC-buttons-left {
+.noVNC_buttons_left {
   padding-left: 10px;
 }
 
-.noVNC-buttons-right {
+.noVNC_buttons_right {
   padding-right: 10px;
 }
 
@@ -427,11 +442,11 @@ html {
   margin-left: 0px;
 }
 
-#showExtraKeysButton { display: none; }
-#toggleCtrlButton { display: inline; }
-#toggleAltButton {  display: inline; }
-#sendTabButton { display: inline; }
-#sendEscButton { display: inline; }
+#noVNC_toggleExtraKeys_button { display: none; }
+#noVNC_toggleCtrl_button { display: inline; }
+#noVNC_toggleAlt_button {  display: inline; }
+#noVNC_sendTab_button { display: inline; }
+#noVNC_sendEsc_button { display: inline; }
 
 /* left-align the status text on lower resolutions */
 @media screen and (max-width: 800px){
@@ -454,35 +469,35 @@ html {
   .noVNC_status_button {
     font-size: 10px;
   }
-  .noVNC-buttons-left {
+  .noVNC_buttons_left {
     padding-left: 0px;
   }
-  .noVNC-buttons-right {
+  .noVNC_buttons_right {
     padding-right: 0px;
   }
   /* collapse the extra keys on lower resolutions */
-  #showExtraKeysButton {
+  #noVNC_toggleExtraKeys_button {
     display: inline;
   }
-  #toggleCtrlButton {
+  #noVNC_toggleCtrl_button {
     display: none;
     position: absolute;
     top: 30px;
     left: 0px;
   }
-  #toggleAltButton {
+  #noVNC_toggleAlt_button {
     display: none;
     position: absolute;
     top: 65px;
     left: 0px;
   }
-  #sendTabButton {
+  #noVNC_sendTab_button {
     display: none;
     position: absolute;
     top: 100px;
     left: 0px;
   }
-  #sendEscButton {
+  #noVNC_sendEsc_button {
     display: none;
     position: absolute;
     top: 135px;

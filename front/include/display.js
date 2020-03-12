@@ -1,770 +1,908 @@
 /*
  * noVNC: HTML5 VNC client
  * Copyright (C) 2012 Joel Martin
+ * Copyright (C) 2015 Samuel Mannehed for Cendio AB
  * Licensed under MPL 2.0 (see LICENSE.txt)
  *
  * See README.md for usage and integration instructions.
  */
 
-/*jslint browser: true, white: false, bitwise: false */
+/*jslint browser: true, white: false */
 /*global Util, Base64, changeCursor */
 
-function Display(defaults) {
-"use strict";
+var Display;
 
-var that           = {},  // Public API methods
-    conf           = {},  // Configuration attributes
+(function () {
+    "use strict";
 
-    // Private Display namespace variables
-    c_ctx          = null,
-    c_forceCanvas  = false,
+    var SUPPORTS_IMAGEDATA_CONSTRUCTOR = false;
+    try {
+        new ImageData(new Uint8ClampedArray(1), 1, 1);
+        SUPPORTS_IMAGEDATA_CONSTRUCTOR = true;
+    } catch (ex) {
+        // ignore failure
+    }
 
-    // Queued drawing actions for in-order rendering
-    renderQ        = [],
+    Display = function (defaults) {
+        this._drawCtx = null;
+        this._c_forceCanvas = false;
 
-    // Predefine function variables (jslint)
-    imageDataGet, rgbImageData, bgrxImageData, cmapImageData,
-    setFillColor, rescale, scan_renderQ,
+        this._renderQ = [];  // queue drawing actions for in-oder rendering
 
-    // The full frame buffer (logical canvas) size
-    fb_width        = 0,
-    fb_height       = 0,
-    // The visible "physical canvas" viewport
-    viewport       = {'x': 0, 'y': 0, 'w' : 0, 'h' : 0 },
-    cleanRect      = {'x1': 0, 'y1': 0, 'x2': -1, 'y2': -1},
+        // the full frame buffer (logical canvas) size
+        this._fb_width = 0;
+        this._fb_height = 0;
 
-    c_prevStyle    = "",
-    tile           = null,
-    tile16x16      = null,
-    tile_x         = 0,
-    tile_y         = 0;
+        // the size limit of the viewport (start disabled)
+        this._maxWidth = 0;
+        this._maxHeight = 0;
 
+        // the visible "physical canvas" viewport
+        this._viewportLoc = { 'x': 0, 'y': 0, 'w': 0, 'h': 0 };
+        this._cleanRect = { 'x1': 0, 'y1': 0, 'x2': -1, 'y2': -1 };
 
-// Configuration attributes
-Util.conf_defaults(conf, that, defaults, [
-    ['target',      'wo', 'dom',  null, 'Canvas element for rendering'],
-    ['context',     'ro', 'raw',  null, 'Canvas 2D context for rendering (read-only)'],
-    ['logo',        'rw', 'raw',  null, 'Logo to display when cleared: {"width": width, "height": height, "data": data}'],
-    ['true_color',  'rw', 'bool', true, 'Use true-color pixel data'],
-    ['colourMap',   'rw', 'arr',  [], 'Colour map array (when not true-color)'],
-    ['scale',       'rw', 'float', 1.0, 'Display area scale factor 0.0 - 1.0'],
-    ['viewport',    'rw', 'bool', false, 'Use a viewport set with viewportChange()'],
-    ['width',       'rw', 'int', null, 'Display area width'],
-    ['height',      'rw', 'int', null, 'Display area height'],
+        this._prevDrawStyle = "";
+        this._tile = null;
+        this._tile16x16 = null;
+        this._tile_x = 0;
+        this._tile_y = 0;
 
-    ['render_mode', 'ro', 'str', '', 'Canvas rendering mode (read-only)'],
+        Util.set_defaults(this, defaults, {
+            'true_color': true,
+            'colourMap': [],
+            'scale': 1.0,
+            'viewport': false,
+            'render_mode': ''
+        });
 
-    ['prefer_js',   'rw', 'str', null, 'Prefer Javascript over canvas methods'],
-    ['cursor_uri',  'rw', 'raw', null, 'Can we render cursor using data URI']
+        Util.Debug(">> Display.constructor");
+
+        if (!this._target) {
+            throw new Error("Target must be set");
+        }
+
+        if (typeof this._target === 'string') {
+            throw new Error('target must be a DOM element');
+        }
+
+        if (!this._target.getContext) {
+            throw new Error("no getContext method");
+        }
+
+        if (!this._drawCtx) {
+            this._drawCtx = this._target.getContext('2d');
+        }
+
+        Util.Debug("User Agent: " + navigator.userAgent);
+        if (Util.Engine.gecko) { Util.Debug("Browser: gecko " + Util.Engine.gecko); }
+        if (Util.Engine.webkit) { Util.Debug("Browser: webkit " + Util.Engine.webkit); }
+        if (Util.Engine.trident) { Util.Debug("Browser: trident " + Util.Engine.trident); }
+        if (Util.Engine.presto) { Util.Debug("Browser: presto " + Util.Engine.presto); }
+
+        this.clear();
+
+        // Check canvas features
+        if ('createImageData' in this._drawCtx) {
+            this._render_mode = 'canvas rendering';
+        } else {
+            throw new Error("Canvas does not support createImageData");
+        }
+
+        if (this._prefer_js === null) {
+            Util.Info("Prefering javascript operations");
+            this._prefer_js = true;
+        }
+
+        // Determine browser support for setting the cursor via data URI scheme
+        if (this._cursor_uri || this._cursor_uri === null ||
+                this._cursor_uri === undefined) {
+            this._cursor_uri = Util.browserSupportsCursorURIs();
+        }
+
+        Util.Debug("<< Display.constructor");
+    };
+
+    Display.prototype = {
+        // Public methods
+        viewportChangePos: function (deltaX, deltaY) {
+            var vp = this._viewportLoc;
+            deltaX = Math.floor(deltaX);
+            deltaY = Math.floor(deltaY);
+
+            if (!this._viewport) {
+                deltaX = -vp.w;  // clamped later of out of bounds
+                deltaY = -vp.h;
+            }
+
+            var vx2 = vp.x + vp.w - 1;
+            var vy2 = vp.y + vp.h - 1;
+
+            // Position change
+
+            if (deltaX < 0 && vp.x + deltaX < 0) {
+                deltaX = -vp.x;
+            }
+            if (vx2 + deltaX >= this._fb_width) {
+                deltaX -= vx2 + deltaX - this._fb_width + 1;
+            }
+
+            if (vp.y + deltaY < 0) {
+                deltaY = -vp.y;
+            }
+            if (vy2 + deltaY >= this._fb_height) {
+                deltaY -= (vy2 + deltaY - this._fb_height + 1);
+            }
+
+            if (deltaX === 0 && deltaY === 0) {
+                return;
+            }
+            Util.Debug("viewportChange deltaX: " + deltaX + ", deltaY: " + deltaY);
+
+            vp.x += deltaX;
+            vx2 += deltaX;
+            vp.y += deltaY;
+            vy2 += deltaY;
+
+            // Update the clean rectangle
+            var cr = this._cleanRect;
+            if (vp.x > cr.x1) {
+                cr.x1 = vp.x;
+            }
+            if (vx2 < cr.x2) {
+                cr.x2 = vx2;
+            }
+            if (vp.y > cr.y1) {
+                cr.y1 = vp.y;
+            }
+            if (vy2 < cr.y2) {
+                cr.y2 = vy2;
+            }
+
+            var x1, w;
+            if (deltaX < 0) {
+                // Shift viewport left, redraw left section
+                x1 = 0;
+                w = -deltaX;
+            } else {
+                // Shift viewport right, redraw right section
+                x1 = vp.w - deltaX;
+                w = deltaX;
+            }
+
+            var y1, h;
+            if (deltaY < 0) {
+                // Shift viewport up, redraw top section
+                y1 = 0;
+                h = -deltaY;
+            } else {
+                // Shift viewport down, redraw bottom section
+                y1 = vp.h - deltaY;
+                h = deltaY;
+            }
+
+            var saveStyle = this._drawCtx.fillStyle;
+            var canvas = this._target;
+            this._drawCtx.fillStyle = "rgb(255,255,255)";
+
+            // Due to this bug among others [1] we need to disable the image-smoothing to
+            // avoid getting a blur effect when panning.
+            //
+            // 1. https://bugzilla.mozilla.org/show_bug.cgi?id=1194719
+            //
+            // We need to set these every time since all properties are reset
+            // when the the size is changed
+            if (this._drawCtx.mozImageSmoothingEnabled) {
+                this._drawCtx.mozImageSmoothingEnabled = false;
+            } else if (this._drawCtx.webkitImageSmoothingEnabled) {
+                this._drawCtx.webkitImageSmoothingEnabled = false;
+            } else if (this._drawCtx.msImageSmoothingEnabled) {
+                this._drawCtx.msImageSmoothingEnabled = false;
+            } else if (this._drawCtx.imageSmoothingEnabled) {
+                this._drawCtx.imageSmoothingEnabled = false;
+            }
+
+            // Copy the valid part of the viewport to the shifted location
+            this._drawCtx.drawImage(canvas, 0, 0, vp.w, vp.h, -deltaX, -deltaY, vp.w, vp.h);
+
+            if (deltaX !== 0) {
+                this._drawCtx.fillRect(x1, 0, w, vp.h);
+            }
+            if (deltaY !== 0) {
+                this._drawCtx.fillRect(0, y1, vp.w, h);
+            }
+            this._drawCtx.fillStyle = saveStyle;
+        },
+
+        viewportChangeSize: function(width, height) {
+
+            if (typeof(width) === "undefined" || typeof(height) === "undefined") {
+
+                Util.Debug("Setting viewport to full display region");
+                width = this._fb_width;
+                height = this._fb_height;
+            }
+
+            var vp = this._viewportLoc;
+            if (vp.w !== width || vp.h !== height) {
+
+                if (this._viewport) {
+                    if (this._maxWidth !== 0 && width > this._maxWidth) {
+                        width = this._maxWidth;
+                    }
+                    if (this._maxHeight !== 0 && height > this._maxHeight) {
+                        height = this._maxHeight;
+                    }
+                }
+
+                var cr = this._cleanRect;
+
+                if (width < vp.w &&  cr.x2 > vp.x + width - 1) {
+                    cr.x2 = vp.x + width - 1;
+                }
+                if (height < vp.h &&  cr.y2 > vp.y + height - 1) {
+                    cr.y2 = vp.y + height - 1;
+                }
+
+                vp.w = width;
+                vp.h = height;
+
+                var canvas = this._target;
+                if (canvas.width !== width || canvas.height !== height) {
+
+                    // We have to save the canvas data since changing the size will clear it
+                    var saveImg = null;
+                    if (vp.w > 0 && vp.h > 0 && canvas.width > 0 && canvas.height > 0) {
+                        var img_width = canvas.width < vp.w ? canvas.width : vp.w;
+                        var img_height = canvas.height < vp.h ? canvas.height : vp.h;
+                        saveImg = this._drawCtx.getImageData(0, 0, img_width, img_height);
+                    }
+
+                    if (canvas.width !== width) {
+                        canvas.width = width;
+                        canvas.style.width = width + 'px';
+                    }
+                    if (canvas.height !== height) {
+                        canvas.height = height;
+                        canvas.style.height = height + 'px';
+                    }
+
+                    if (saveImg) {
+                        this._drawCtx.putImageData(saveImg, 0, 0);
+                    }
+                }
+            }
+        },
+
+        // Return a map of clean and dirty areas of the viewport and reset the
+        // tracking of clean and dirty areas
+        //
+        // Returns: { 'cleanBox': { 'x': x, 'y': y, 'w': w, 'h': h},
+        //            'dirtyBoxes': [{ 'x': x, 'y': y, 'w': w, 'h': h }, ...] }
+        getCleanDirtyReset: function () {
+            var vp = this._viewportLoc;
+            var cr = this._cleanRect;
+
+            var cleanBox = { 'x': cr.x1, 'y': cr.y1,
+                             'w': cr.x2 - cr.x1 + 1, 'h': cr.y2 - cr.y1 + 1 };
+
+            var dirtyBoxes = [];
+            if (cr.x1 >= cr.x2 || cr.y1 >= cr.y2) {
+                // Whole viewport is dirty
+                dirtyBoxes.push({ 'x': vp.x, 'y': vp.y, 'w': vp.w, 'h': vp.h });
+            } else {
+                // Redraw dirty regions
+                var vx2 = vp.x + vp.w - 1;
+                var vy2 = vp.y + vp.h - 1;
+
+                if (vp.x < cr.x1) {
+                    // left side dirty region
+                    dirtyBoxes.push({'x': vp.x, 'y': vp.y,
+                                     'w': cr.x1 - vp.x + 1, 'h': vp.h});
+                }
+                if (vx2 > cr.x2) {
+                    // right side dirty region
+                    dirtyBoxes.push({'x': cr.x2 + 1, 'y': vp.y,
+                                     'w': vx2 - cr.x2, 'h': vp.h});
+                }
+                if(vp.y < cr.y1) {
+                    // top/middle dirty region
+                    dirtyBoxes.push({'x': cr.x1, 'y': vp.y,
+                                     'w': cr.x2 - cr.x1 + 1, 'h': cr.y1 - vp.y});
+                }
+                if (vy2 > cr.y2) {
+                    // bottom/middle dirty region
+                    dirtyBoxes.push({'x': cr.x1, 'y': cr.y2 + 1,
+                                     'w': cr.x2 - cr.x1 + 1, 'h': vy2 - cr.y2});
+                }
+            }
+
+            this._cleanRect = {'x1': vp.x, 'y1': vp.y,
+                               'x2': vp.x + vp.w - 1, 'y2': vp.y + vp.h - 1};
+
+            return {'cleanBox': cleanBox, 'dirtyBoxes': dirtyBoxes};
+        },
+
+        absX: function (x) {
+            return x + this._viewportLoc.x;
+        },
+
+        absY: function (y) {
+            return y + this._viewportLoc.y;
+        },
+
+        resize: function (width, height) {
+            this._prevDrawStyle = "";
+
+            this._fb_width = width;
+            this._fb_height = height;
+
+            this._rescale(this._scale);
+
+            this.viewportChangeSize();
+        },
+
+        clear: function () {
+            if (this._logo) {
+                this.resize(this._logo.width, this._logo.height);
+                this.blitStringImage(this._logo.data, 0, 0);
+            } else {
+                if (Util.Engine.trident === 6) {
+                    // NB(directxman12): there's a bug in IE10 where we can fail to actually
+                    //                   clear the canvas here because of the resize.
+                    //                   Clearing the current viewport first fixes the issue
+                    this._drawCtx.clearRect(0, 0, this._viewportLoc.w, this._viewportLoc.h);
+                }
+                this.resize(240, 20);
+                this._drawCtx.clearRect(0, 0, this._viewportLoc.w, this._viewportLoc.h);
+            }
+
+            this._renderQ = [];
+        },
+
+        fillRect: function (x, y, width, height, color, from_queue) {
+            if (this._renderQ.length !== 0 && !from_queue) {
+                this.renderQ_push({
+                    'type': 'fill',
+                    'x': x,
+                    'y': y,
+                    'width': width,
+                    'height': height,
+                    'color': color
+                });
+            } else {
+                this._setFillColor(color);
+                this._drawCtx.fillRect(x - this._viewportLoc.x, y - this._viewportLoc.y, width, height);
+            }
+        },
+
+        copyImage: function (old_x, old_y, new_x, new_y, w, h, from_queue) {
+            if (this._renderQ.length !== 0 && !from_queue) {
+                this.renderQ_push({
+                    'type': 'copy',
+                    'old_x': old_x,
+                    'old_y': old_y,
+                    'x': new_x,
+                    'y': new_y,
+                    'width': w,
+                    'height': h,
+                });
+            } else {
+                var x1 = old_x - this._viewportLoc.x;
+                var y1 = old_y - this._viewportLoc.y;
+                var x2 = new_x - this._viewportLoc.x;
+                var y2 = new_y - this._viewportLoc.y;
+
+                this._drawCtx.drawImage(this._target, x1, y1, w, h, x2, y2, w, h);
+            }
+        },
+
+        // start updating a tile
+        startTile: function (x, y, width, height, color) {
+            this._tile_x = x;
+            this._tile_y = y;
+            if (width === 16 && height === 16) {
+                this._tile = this._tile16x16;
+            } else {
+                this._tile = this._drawCtx.createImageData(width, height);
+            }
+
+            if (this._prefer_js) {
+                var bgr;
+                if (this._true_color) {
+                    bgr = color;
+                } else {
+                    bgr = this._colourMap[color[0]];
+                }
+                var red = bgr[2];
+                var green = bgr[1];
+                var blue = bgr[0];
+
+                var data = this._tile.data;
+                for (var i = 0; i < width * height * 4; i += 4) {
+                    data[i] = red;
+                    data[i + 1] = green;
+                    data[i + 2] = blue;
+                    data[i + 3] = 255;
+                }
+            } else {
+                this.fillRect(x, y, width, height, color, true);
+            }
+        },
+
+        // update sub-rectangle of the current tile
+        subTile: function (x, y, w, h, color) {
+            if (this._prefer_js) {
+                var bgr;
+                if (this._true_color) {
+                    bgr = color;
+                } else {
+                    bgr = this._colourMap[color[0]];
+                }
+                var red = bgr[2];
+                var green = bgr[1];
+                var blue = bgr[0];
+                var xend = x + w;
+                var yend = y + h;
+
+                var data = this._tile.data;
+                var width = this._tile.width;
+                for (var j = y; j < yend; j++) {
+                    for (var i = x; i < xend; i++) {
+                        var p = (i + (j * width)) * 4;
+                        data[p] = red;
+                        data[p + 1] = green;
+                        data[p + 2] = blue;
+                        data[p + 3] = 255;
+                    }
+                }
+            } else {
+                this.fillRect(this._tile_x + x, this._tile_y + y, w, h, color, true);
+            }
+        },
+
+        // draw the current tile to the screen
+        finishTile: function () {
+            if (this._prefer_js) {
+                this._drawCtx.putImageData(this._tile, this._tile_x - this._viewportLoc.x,
+                                           this._tile_y - this._viewportLoc.y);
+            }
+            // else: No-op -- already done by setSubTile
+        },
+
+        blitImage: function (x, y, width, height, arr, offset, from_queue) {
+            if (this._renderQ.length !== 0 && !from_queue) {
+                // NB(directxman12): it's technically more performant here to use preallocated arrays,
+                // but it's a lot of extra work for not a lot of payoff -- if we're using the render queue,
+                // this probably isn't getting called *nearly* as much
+                var new_arr = new Uint8Array(width * height * 4);
+                new_arr.set(new Uint8Array(arr.buffer, 0, new_arr.length));
+                this.renderQ_push({
+                    'type': 'blit',
+                    'data': new_arr,
+                    'x': x,
+                    'y': y,
+                    'width': width,
+                    'height': height,
+                });
+            } else if (this._true_color) {
+                this._bgrxImageData(x, y, this._viewportLoc.x, this._viewportLoc.y, width, height, arr, offset);
+            } else {
+                this._cmapImageData(x, y, this._viewportLoc.x, this._viewportLoc.y, width, height, arr, offset);
+            }
+        },
+
+        blitRgbImage: function (x, y , width, height, arr, offset, from_queue) {
+            if (this._renderQ.length !== 0 && !from_queue) {
+                // NB(directxman12): it's technically more performant here to use preallocated arrays,
+                // but it's a lot of extra work for not a lot of payoff -- if we're using the render queue,
+                // this probably isn't getting called *nearly* as much
+                var new_arr = new Uint8Array(width * height * 4);
+                new_arr.set(new Uint8Array(arr.buffer, 0, new_arr.length));
+                this.renderQ_push({
+                    'type': 'blitRgb',
+                    'data': new_arr,
+                    'x': x,
+                    'y': y,
+                    'width': width,
+                    'height': height,
+                });
+            } else if (this._true_color) {
+                this._rgbImageData(x, y, this._viewportLoc.x, this._viewportLoc.y, width, height, arr, offset);
+            } else {
+                // probably wrong?
+                this._cmapImageData(x, y, this._viewportLoc.x, this._viewportLoc.y, width, height, arr, offset);
+            }
+        },
+
+        blitRgbxImage: function (x, y, width, height, arr, offset, from_queue) {
+            if (this._renderQ.length !== 0 && !from_queue) {
+                // NB(directxman12): it's technically more performant here to use preallocated arrays,
+                // but it's a lot of extra work for not a lot of payoff -- if we're using the render queue,
+                // this probably isn't getting called *nearly* as much
+                var new_arr = new Uint8Array(width * height * 4);
+                new_arr.set(new Uint8Array(arr.buffer, 0, new_arr.length));
+                this.renderQ_push({
+                    'type': 'blitRgbx',
+                    'data': new_arr,
+                    'x': x,
+                    'y': y,
+                    'width': width,
+                    'height': height,
+                });
+            } else {
+                this._rgbxImageData(x, y, this._viewportLoc.x, this._viewportLoc.y, width, height, arr, offset);
+            }
+        },
+
+        blitStringImage: function (str, x, y) {
+            var img = new Image();
+            img.onload = function () {
+                this._drawCtx.drawImage(img, x - this._viewportLoc.x, y - this._viewportLoc.y);
+            }.bind(this);
+            img.src = str;
+            return img; // for debugging purposes
+        },
+
+        // wrap ctx.drawImage but relative to viewport
+        drawImage: function (img, x, y) {
+            this._drawCtx.drawImage(img, x - this._viewportLoc.x, y - this._viewportLoc.y);
+        },
+
+        renderQ_push: function (action) {
+            this._renderQ.push(action);
+            if (this._renderQ.length === 1) {
+                // If this can be rendered immediately it will be, otherwise
+                // the scanner will start polling the queue (every
+                // requestAnimationFrame interval)
+                this._scan_renderQ();
+            }
+        },
+
+        changeCursor: function (pixels, mask, hotx, hoty, w, h) {
+            if (this._cursor_uri === false) {
+                Util.Warn("changeCursor called but no cursor data URI support");
+                return;
+            }
+
+            if (this._true_color) {
+                Display.changeCursor(this._target, pixels, mask, hotx, hoty, w, h);
+            } else {
+                Display.changeCursor(this._target, pixels, mask, hotx, hoty, w, h, this._colourMap);
+            }
+        },
+
+        defaultCursor: function () {
+            this._target.style.cursor = "default";
+        },
+
+        disableLocalCursor: function () {
+            this._target.style.cursor = "none";
+        },
+
+        clippingDisplay: function () {
+            var vp = this._viewportLoc;
+
+            var fbClip = this._fb_width > vp.w || this._fb_height > vp.h;
+            var limitedVp = this._maxWidth !== 0 && this._maxHeight !== 0;
+            var clipping = false;
+
+            if (limitedVp) {
+                clipping = vp.w > this._maxWidth || vp.h > this._maxHeight;
+            }
+
+            return fbClip || (limitedVp && clipping);
+        },
+
+        // Overridden getters/setters
+        get_context: function () {
+            return this._drawCtx;
+        },
+
+        set_scale: function (scale) {
+            this._rescale(scale);
+        },
+
+        set_width: function (w) {
+            this._fb_width = w;
+        },
+        get_width: function () {
+            return this._fb_width;
+        },
+
+        set_height: function (h) {
+            this._fb_height =  h;
+        },
+        get_height: function () {
+            return this._fb_height;
+        },
+
+        autoscale: function (containerWidth, containerHeight, downscaleOnly) {
+            var targetAspectRatio = containerWidth / containerHeight;
+            var fbAspectRatio = this._fb_width / this._fb_height;
+
+            var scaleRatio;
+            if (fbAspectRatio >= targetAspectRatio) {
+                scaleRatio = containerWidth / this._fb_width;
+            } else {
+                scaleRatio = containerHeight / this._fb_height;
+            }
+
+            var targetW, targetH;
+            if (scaleRatio > 1.0 && downscaleOnly) {
+                targetW = this._fb_width;
+                targetH = this._fb_height;
+                scaleRatio = 1.0;
+            } else if (fbAspectRatio >= targetAspectRatio) {
+                targetW = containerWidth;
+                targetH = Math.round(containerWidth / fbAspectRatio);
+            } else {
+                targetW = Math.round(containerHeight * fbAspectRatio);
+                targetH = containerHeight;
+            }
+
+            // NB(directxman12): If you set the width directly, or set the
+            //                   style width to a number, the canvas is cleared.
+            //                   However, if you set the style width to a string
+            //                   ('NNNpx'), the canvas is scaled without clearing.
+            this._target.style.width = targetW + 'px';
+            this._target.style.height = targetH + 'px';
+
+            this._scale = scaleRatio;
+
+            return scaleRatio;  // so that the mouse, etc scale can be set
+        },
+
+        // Private Methods
+        _rescale: function (factor) {
+            this._scale = factor;
+
+            var w;
+            var h;
+
+            if (this._viewport &&
+                this._maxWidth !== 0 && this._maxHeight !== 0) {
+                w = Math.min(this._fb_width, this._maxWidth);
+                h = Math.min(this._fb_height, this._maxHeight);
+            } else {
+                w = this._fb_width;
+                h = this._fb_height;
+            }
+
+            this._target.style.width = Math.round(factor * w) + 'px';
+            this._target.style.height = Math.round(factor * h) + 'px';
+        },
+
+        _setFillColor: function (color) {
+            var bgr;
+            if (this._true_color) {
+                bgr = color;
+            } else {
+                bgr = this._colourMap[color];
+            }
+
+            var newStyle = 'rgb(' + bgr[2] + ',' + bgr[1] + ',' + bgr[0] + ')';
+            if (newStyle !== this._prevDrawStyle) {
+                this._drawCtx.fillStyle = newStyle;
+                this._prevDrawStyle = newStyle;
+            }
+        },
+
+        _rgbImageData: function (x, y, vx, vy, width, height, arr, offset) {
+            var img = this._drawCtx.createImageData(width, height);
+            var data = img.data;
+            for (var i = 0, j = offset; i < width * height * 4; i += 4, j += 3) {
+                data[i]     = arr[j];
+                data[i + 1] = arr[j + 1];
+                data[i + 2] = arr[j + 2];
+                data[i + 3] = 255;  // Alpha
+            }
+            this._drawCtx.putImageData(img, x - vx, y - vy);
+        },
+
+        _bgrxImageData: function (x, y, vx, vy, width, height, arr, offset) {
+            var img = this._drawCtx.createImageData(width, height);
+            var data = img.data;
+            for (var i = 0, j = offset; i < width * height * 4; i += 4, j += 4) {
+                data[i]     = arr[j + 2];
+                data[i + 1] = arr[j + 1];
+                data[i + 2] = arr[j];
+                data[i + 3] = 255;  // Alpha
+            }
+            this._drawCtx.putImageData(img, x - vx, y - vy);
+        },
+
+        _rgbxImageData: function (x, y, vx, vy, width, height, arr, offset) {
+            // NB(directxman12): arr must be an Type Array view
+            var img;
+            if (SUPPORTS_IMAGEDATA_CONSTRUCTOR) {
+                img = new ImageData(new Uint8ClampedArray(arr.buffer, arr.byteOffset, width * height * 4), width, height);
+            } else {
+                img = this._drawCtx.createImageData(width, height);
+                img.data.set(new Uint8ClampedArray(arr.buffer, arr.byteOffset, width * height * 4));
+            }
+            this._drawCtx.putImageData(img, x - vx, y - vy);
+        },
+
+        _cmapImageData: function (x, y, vx, vy, width, height, arr, offset) {
+            var img = this._drawCtx.createImageData(width, height);
+            var data = img.data;
+            var cmap = this._colourMap;
+            for (var i = 0, j = offset; i < width * height * 4; i += 4, j++) {
+                var bgr = cmap[arr[j]];
+                data[i]     = bgr[2];
+                data[i + 1] = bgr[1];
+                data[i + 2] = bgr[0];
+                data[i + 3] = 255;  // Alpha
+            }
+            this._drawCtx.putImageData(img, x - vx, y - vy);
+        },
+
+        _scan_renderQ: function () {
+            var ready = true;
+            while (ready && this._renderQ.length > 0) {
+                var a = this._renderQ[0];
+                switch (a.type) {
+                    case 'copy':
+                        this.copyImage(a.old_x, a.old_y, a.x, a.y, a.width, a.height, true);
+                        break;
+                    case 'fill':
+                        this.fillRect(a.x, a.y, a.width, a.height, a.color, true);
+                        break;
+                    case 'blit':
+                        this.blitImage(a.x, a.y, a.width, a.height, a.data, 0, true);
+                        break;
+                    case 'blitRgb':
+                        this.blitRgbImage(a.x, a.y, a.width, a.height, a.data, 0, true);
+                        break;
+                    case 'blitRgbx':
+                        this.blitRgbxImage(a.x, a.y, a.width, a.height, a.data, 0, true);
+                        break;
+                    case 'img':
+                        if (a.img.complete) {
+                            this.drawImage(a.img, a.x, a.y);
+                        } else {
+                            // We need to wait for this image to 'load'
+                            // to keep things in-order
+                            ready = false;
+                        }
+                        break;
+                }
+
+                if (ready) {
+                    this._renderQ.shift();
+                }
+            }
+
+            if (this._renderQ.length > 0) {
+                requestAnimFrame(this._scan_renderQ.bind(this));
+            }
+        },
+    };
+
+    Util.make_properties(Display, [
+        ['target', 'wo', 'dom'],       // Canvas element for rendering
+        ['context', 'ro', 'raw'],      // Canvas 2D context for rendering (read-only)
+        ['logo', 'rw', 'raw'],         // Logo to display when cleared: {"width": w, "height": h, "data": data}
+        ['true_color', 'rw', 'bool'],  // Use true-color pixel data
+        ['colourMap', 'rw', 'arr'],    // Colour map array (when not true-color)
+        ['scale', 'rw', 'float'],      // Display area scale factor 0.0 - 1.0
+        ['viewport', 'rw', 'bool'],    // Use viewport clipping
+        ['width', 'rw', 'int'],        // Display area width
+        ['height', 'rw', 'int'],       // Display area height
+        ['maxWidth', 'rw', 'int'],     // Viewport max width (0 if disabled)
+        ['maxHeight', 'rw', 'int'],    // Viewport max height (0 if disabled)
+
+        ['render_mode', 'ro', 'str'],  // Canvas rendering mode (read-only)
+
+        ['prefer_js', 'rw', 'str'],    // Prefer Javascript over canvas methods
+        ['cursor_uri', 'rw', 'raw']    // Can we render cursor using data URI
     ]);
 
-// Override some specific getters/setters
-that.get_context = function () { return c_ctx; };
-
-that.set_scale = function(scale) { rescale(scale); };
-
-that.set_width = function (val) { that.resize(val, fb_height); };
-that.get_width = function() { return fb_width; };
-
-that.set_height = function (val) { that.resize(fb_width, val); };
-that.get_height = function() { return fb_height; };
-
-
-
-//
-// Private functions
-//
-
-// Create the public API interface
-function constructor() {
-    Util.Debug(">> Display.constructor");
-
-    var c, func, i, curDat, curSave,
-        has_imageData = false, UE = Util.Engine;
-
-    if (! conf.target) { throw("target must be set"); }
-
-    if (typeof conf.target === 'string') {
-        throw("target must be a DOM element");
-    }
-
-    c = conf.target;
-
-    if (! c.getContext) { throw("no getContext method"); }
-
-    if (! c_ctx) { c_ctx = c.getContext('2d'); }
-
-    Util.Debug("User Agent: " + navigator.userAgent);
-    if (UE.gecko) { Util.Debug("Browser: gecko " + UE.gecko); }
-    if (UE.webkit) { Util.Debug("Browser: webkit " + UE.webkit); }
-    if (UE.trident) { Util.Debug("Browser: trident " + UE.trident); }
-    if (UE.presto) { Util.Debug("Browser: presto " + UE.presto); }
-
-    that.clear();
-
-    // Check canvas features
-    if ('createImageData' in c_ctx) {
-        conf.render_mode = "canvas rendering";
-    } else {
-        throw("Canvas does not support createImageData");
-    }
-    if (conf.prefer_js === null) {
-        Util.Info("Prefering javascript operations");
-        conf.prefer_js = true;
-    }
-
-    // Initialize cached tile imageData
-    tile16x16 = c_ctx.createImageData(16, 16);
-
-    /*
-     * Determine browser support for setting the cursor via data URI
-     * scheme
-     */
-    curDat = [];
-    for (i=0; i < 8 * 8 * 4; i += 1) {
-        curDat.push(255);
-    }
-    try {
-        curSave = c.style.cursor;
-        changeCursor(conf.target, curDat, curDat, 2, 2, 8, 8);
-        if (c.style.cursor) {
-            if (conf.cursor_uri === null) {
-                conf.cursor_uri = true;
-            }
-            Util.Info("Data URI scheme cursor supported");
+    // Class Methods
+    Display.changeCursor = function (target, pixels, mask, hotx, hoty, w0, h0, cmap) {
+        var w = w0;
+        var h = h0;
+        if (h < w) {
+            h = w;  // increase h to make it square
         } else {
-            if (conf.cursor_uri === null) {
-                conf.cursor_uri = false;
-            }
-            Util.Warn("Data URI scheme cursor not supported");
-        }
-        c.style.cursor = curSave;
-    } catch (exc2) { 
-        Util.Error("Data URI scheme cursor test exception: " + exc2);
-        conf.cursor_uri = false;
-    }
-
-    Util.Debug("<< Display.constructor");
-    return that ;
-}
-
-rescale = function(factor) {
-    var c, tp, x, y, 
-        properties = ['transform', 'WebkitTransform', 'MozTransform', null];
-    c = conf.target;
-    tp = properties.shift();
-    while (tp) {
-        if (typeof c.style[tp] !== 'undefined') {
-            break;
-        }
-        tp = properties.shift();
-    }
-
-    if (tp === null) {
-        Util.Debug("No scaling support");
-        return;
-    }
-
-
-    if (typeof(factor) === "undefined") {
-        factor = conf.scale;
-    } else if (factor > 1.0) {
-        factor = 1.0;
-    } else if (factor < 0.1) {
-        factor = 0.1;
-    }
-
-    if (conf.scale === factor) {
-        //Util.Debug("Display already scaled to '" + factor + "'");
-        return;
-    }
-
-    conf.scale = factor;
-    x = c.width - c.width * factor;
-    y = c.height - c.height * factor;
-    c.style[tp] = "scale(" + conf.scale + ") translate(-" + x + "px, -" + y + "px)";
-};
-
-setFillColor = function(color) {
-    var bgr, newStyle;
-    if (conf.true_color) {
-        bgr = color;
-    } else {
-        bgr = conf.colourMap[color[0]];
-    }
-    newStyle = "rgb(" + bgr[2] + "," + bgr[1] + "," + bgr[0] + ")";
-    if (newStyle !== c_prevStyle) {
-        c_ctx.fillStyle = newStyle;
-        c_prevStyle = newStyle;
-    }
-};
-
-
-//
-// Public API interface functions
-//
-
-// Shift and/or resize the visible viewport
-that.viewportChange = function(deltaX, deltaY, width, height) {
-    var c = conf.target, v = viewport, cr = cleanRect,
-        saveImg = null, saveStyle, x1, y1, vx2, vy2, w, h;
-
-    if (!conf.viewport) {
-        Util.Debug("Setting viewport to full display region");
-        deltaX = -v.w; // Clamped later if out of bounds
-        deltaY = -v.h; // Clamped later if out of bounds
-        width = fb_width;
-        height = fb_height;
-    }
-
-    if (typeof(deltaX) === "undefined") { deltaX = 0; }
-    if (typeof(deltaY) === "undefined") { deltaY = 0; }
-    if (typeof(width) === "undefined") { width = v.w; }
-    if (typeof(height) === "undefined") { height = v.h; }
-
-    // Size change
-
-    if (width > fb_width) { width = fb_width; }
-    if (height > fb_height) { height = fb_height; }
-
-    if ((v.w !== width) || (v.h !== height)) {
-        // Change width
-        if ((width < v.w) && (cr.x2 > v.x + width -1)) {
-            cr.x2 = v.x + width - 1;
-        }
-        v.w = width;
-
-        // Change height
-        if ((height < v.h) && (cr.y2 > v.y + height -1)) {
-            cr.y2 = v.y + height - 1;
-        }
-        v.h = height;
-
-
-        if (v.w > 0 && v.h > 0 && c.width > 0 && c.height > 0) {
-            saveImg = c_ctx.getImageData(0, 0,
-                    (c.width < v.w) ? c.width : v.w,
-                    (c.height < v.h) ? c.height : v.h);
+            w = h;  // increase w to make it square
         }
 
-        c.width = v.w;
-        c.height = v.h;
+        var cur = [];
 
-        if (saveImg) {
-            c_ctx.putImageData(saveImg, 0, 0);
-        }
-    }
+        // Push multi-byte little-endian values
+        cur.push16le = function (num) {
+            this.push(num & 0xFF, (num >> 8) & 0xFF);
+        };
+        cur.push32le = function (num) {
+            this.push(num & 0xFF,
+                      (num >> 8) & 0xFF,
+                      (num >> 16) & 0xFF,
+                      (num >> 24) & 0xFF);
+        };
 
-    vx2 = v.x + v.w - 1;
-    vy2 = v.y + v.h - 1;
+        var IHDRsz = 40;
+        var RGBsz = w * h * 4;
+        var XORsz = Math.ceil((w * h) / 8.0);
+        var ANDsz = Math.ceil((w * h) / 8.0);
 
+        cur.push16le(0);        // 0: Reserved
+        cur.push16le(2);        // 2: .CUR type
+        cur.push16le(1);        // 4: Number of images, 1 for non-animated ico
 
-    // Position change
+        // Cursor #1 header (ICONDIRENTRY)
+        cur.push(w);            // 6: width
+        cur.push(h);            // 7: height
+        cur.push(0);            // 8: colors, 0 -> true-color
+        cur.push(0);            // 9: reserved
+        cur.push16le(hotx);     // 10: hotspot x coordinate
+        cur.push16le(hoty);     // 12: hotspot y coordinate
+        cur.push32le(IHDRsz + RGBsz + XORsz + ANDsz);
+                                // 14: cursor data byte size
+        cur.push32le(22);       // 18: offset of cursor data in the file
 
-    if ((deltaX < 0) && ((v.x + deltaX) < 0)) {
-        deltaX = - v.x;
-    }
-    if ((vx2 + deltaX) >= fb_width) {
-        deltaX -= ((vx2 + deltaX) - fb_width + 1);
-    }
+        // Cursor #1 InfoHeader (ICONIMAGE/BITMAPINFO)
+        cur.push32le(IHDRsz);   // 22: InfoHeader size
+        cur.push32le(w);        // 26: Cursor width
+        cur.push32le(h * 2);    // 30: XOR+AND height
+        cur.push16le(1);        // 34: number of planes
+        cur.push16le(32);       // 36: bits per pixel
+        cur.push32le(0);        // 38: Type of compression
 
-    if ((v.y + deltaY) < 0) {
-        deltaY = - v.y;
-    }
-    if ((vy2 + deltaY) >= fb_height) {
-        deltaY -= ((vy2 + deltaY) - fb_height + 1);
-    }
+        cur.push32le(XORsz + ANDsz);
+                                // 42: Size of Image
+        cur.push32le(0);        // 46: reserved
+        cur.push32le(0);        // 50: reserved
+        cur.push32le(0);        // 54: reserved
+        cur.push32le(0);        // 58: reserved
 
-    if ((deltaX === 0) && (deltaY === 0)) {
-        //Util.Debug("skipping viewport change");
-        return;
-    }
-    Util.Debug("viewportChange deltaX: " + deltaX + ", deltaY: " + deltaY);
-
-    v.x += deltaX;
-    vx2 += deltaX;
-    v.y += deltaY;
-    vy2 += deltaY;
-
-    // Update the clean rectangle
-    if (v.x > cr.x1) {
-        cr.x1 = v.x;
-    }
-    if (vx2 < cr.x2) {
-        cr.x2 = vx2;
-    }
-    if (v.y > cr.y1) {
-        cr.y1 = v.y;
-    }
-    if (vy2 < cr.y2) {
-        cr.y2 = vy2;
-    }
-
-    if (deltaX < 0) {
-        // Shift viewport left, redraw left section
-        x1 = 0;
-        w = - deltaX;
-    } else {
-        // Shift viewport right, redraw right section
-        x1 = v.w - deltaX;
-        w = deltaX;
-    }
-    if (deltaY < 0) {
-        // Shift viewport up, redraw top section
-        y1 = 0;
-        h = - deltaY;
-    } else {
-        // Shift viewport down, redraw bottom section
-        y1 = v.h - deltaY;
-        h = deltaY;
-    }
-
-    // Copy the valid part of the viewport to the shifted location
-    saveStyle = c_ctx.fillStyle;
-    c_ctx.fillStyle = "rgb(255,255,255)";
-    if (deltaX !== 0) {
-        //that.copyImage(0, 0, -deltaX, 0, v.w, v.h);
-        //that.fillRect(x1, 0, w, v.h, [255,255,255]);
-        c_ctx.drawImage(c, 0, 0, v.w, v.h, -deltaX, 0, v.w, v.h);
-        c_ctx.fillRect(x1, 0, w, v.h);
-    }
-    if (deltaY !== 0) {
-        //that.copyImage(0, 0, 0, -deltaY, v.w, v.h);
-        //that.fillRect(0, y1, v.w, h, [255,255,255]);
-        c_ctx.drawImage(c, 0, 0, v.w, v.h, 0, -deltaY, v.w, v.h);
-        c_ctx.fillRect(0, y1, v.w, h);
-    }
-    c_ctx.fillStyle = saveStyle;
-};
-
-
-// Return a map of clean and dirty areas of the viewport and reset the
-// tracking of clean and dirty areas.
-//
-// Returns: {'cleanBox':   {'x': x, 'y': y, 'w': w, 'h': h},
-//           'dirtyBoxes': [{'x': x, 'y': y, 'w': w, 'h': h}, ...]}
-that.getCleanDirtyReset = function() {
-    var v = viewport, c = cleanRect, cleanBox, dirtyBoxes = [],
-        vx2 = v.x + v.w - 1, vy2 = v.y + v.h - 1;
-
-
-    // Copy the cleanRect
-    cleanBox = {'x': c.x1, 'y': c.y1,
-                'w': c.x2 - c.x1 + 1, 'h': c.y2 - c.y1 + 1};
-
-    if ((c.x1 >= c.x2) || (c.y1 >= c.y2)) {
-        // Whole viewport is dirty
-        dirtyBoxes.push({'x': v.x, 'y': v.y, 'w': v.w, 'h': v.h});
-    } else {
-        // Redraw dirty regions
-        if (v.x < c.x1) {
-            // left side dirty region
-            dirtyBoxes.push({'x': v.x, 'y': v.y,
-                             'w': c.x1 - v.x + 1, 'h': v.h});
-        }
-        if (vx2 > c.x2) {
-            // right side dirty region
-            dirtyBoxes.push({'x': c.x2 + 1, 'y': v.y,
-                             'w': vx2 - c.x2, 'h': v.h});
-        }
-        if (v.y < c.y1) {
-            // top/middle dirty region
-            dirtyBoxes.push({'x': c.x1, 'y': v.y,
-                             'w': c.x2 - c.x1 + 1, 'h': c.y1 - v.y});
-        }
-        if (vy2 > c.y2) {
-            // bottom/middle dirty region
-            dirtyBoxes.push({'x': c.x1, 'y': c.y2 + 1,
-                             'w': c.x2 - c.x1 + 1, 'h': vy2 - c.y2});
-        }
-    }
-
-    // Reset the cleanRect to the whole viewport
-    cleanRect = {'x1': v.x, 'y1': v.y,
-                 'x2': v.x + v.w - 1, 'y2': v.y + v.h - 1};
-
-    return {'cleanBox': cleanBox, 'dirtyBoxes': dirtyBoxes};
-};
-
-// Translate viewport coordinates to absolute coordinates
-that.absX = function(x) {
-    return x + viewport.x;
-};
-that.absY = function(y) {
-    return y + viewport.y;
-};
-
-
-that.resize = function(width, height) {
-    c_prevStyle    = "";
-
-    fb_width = width;
-    fb_height = height;
-
-    rescale(conf.scale);
-    that.viewportChange();
-};
-
-that.clear = function() {
-
-    if (conf.logo) {
-        that.resize(conf.logo.width, conf.logo.height);
-        that.blitStringImage(conf.logo.data, 0, 0);
-    } else {
-        that.resize(640, 20);
-        c_ctx.clearRect(0, 0, viewport.w, viewport.h);
-    }
-
-    renderQ = [];
-
-    // No benefit over default ("source-over") in Chrome and firefox
-    //c_ctx.globalCompositeOperation = "copy";
-};
-
-that.fillRect = function(x, y, width, height, color) {
-    setFillColor(color);
-    c_ctx.fillRect(x - viewport.x, y - viewport.y, width, height);
-};
-
-that.copyImage = function(old_x, old_y, new_x, new_y, w, h) {
-    var x1 = old_x - viewport.x, y1 = old_y - viewport.y,
-        x2 = new_x - viewport.x, y2 = new_y  - viewport.y;
-    c_ctx.drawImage(conf.target, x1, y1, w, h, x2, y2, w, h);
-};
-
-
-// Start updating a tile
-that.startTile = function(x, y, width, height, color) {
-    var data, bgr, red, green, blue, i;
-    tile_x = x;
-    tile_y = y;
-    if ((width === 16) && (height === 16)) {
-        tile = tile16x16;
-    } else {
-        tile = c_ctx.createImageData(width, height);
-    }
-    data = tile.data;
-    if (conf.prefer_js) {
-        if (conf.true_color) {
-            bgr = color;
-        } else {
-            bgr = conf.colourMap[color[0]];
-        }
-        red = bgr[2];
-        green = bgr[1];
-        blue = bgr[0];
-        for (i = 0; i < (width * height * 4); i+=4) {
-            data[i    ] = red;
-            data[i + 1] = green;
-            data[i + 2] = blue;
-            data[i + 3] = 255;
-        }
-    } else {
-        that.fillRect(x, y, width, height, color);
-    }
-};
-
-// Update sub-rectangle of the current tile
-that.subTile = function(x, y, w, h, color) {
-    var data, p, bgr, red, green, blue, width, j, i, xend, yend;
-    if (conf.prefer_js) {
-        data = tile.data;
-        width = tile.width;
-        if (conf.true_color) {
-            bgr = color;
-        } else {
-            bgr = conf.colourMap[color[0]];
-        }
-        red = bgr[2];
-        green = bgr[1];
-        blue = bgr[0];
-        xend = x + w;
-        yend = y + h;
-        for (j = y; j < yend; j += 1) {
-            for (i = x; i < xend; i += 1) {
-                p = (i + (j * width) ) * 4;
-                data[p    ] = red;
-                data[p + 1] = green;
-                data[p + 2] = blue;
-                data[p + 3] = 255;
-            }   
-        } 
-    } else {
-        that.fillRect(tile_x + x, tile_y + y, w, h, color);
-    }
-};
-
-// Draw the current tile to the screen
-that.finishTile = function() {
-    if (conf.prefer_js) {
-        c_ctx.putImageData(tile, tile_x - viewport.x, tile_y - viewport.y);
-    }
-    // else: No-op, if not prefer_js then already done by setSubTile
-};
-
-rgbImageData = function(x, y, vx, vy, width, height, arr, offset) {
-    var img, i, j, data;
-    /*
-    if ((x - v.x >= v.w) || (y - v.y >= v.h) ||
-        (x - v.x + width < 0) || (y - v.y + height < 0)) {
-        // Skipping because outside of viewport
-        return;
-    }
-    */
-    img = c_ctx.createImageData(width, height);
-    data = img.data;
-    for (i=0, j=offset; i < (width * height * 4); i=i+4, j=j+3) {
-        data[i    ] = arr[j    ];
-        data[i + 1] = arr[j + 1];
-        data[i + 2] = arr[j + 2];
-        data[i + 3] = 255; // Set Alpha
-    }
-    c_ctx.putImageData(img, x - vx, y - vy);
-};
-
-bgrxImageData = function(x, y, vx, vy, width, height, arr, offset) {
-    var img, i, j, data;
-    /*
-    if ((x - v.x >= v.w) || (y - v.y >= v.h) ||
-        (x - v.x + width < 0) || (y - v.y + height < 0)) {
-        // Skipping because outside of viewport
-        return;
-    }
-    */
-    img = c_ctx.createImageData(width, height);
-    data = img.data;
-    for (i=0, j=offset; i < (width * height * 4); i=i+4, j=j+4) {
-        data[i    ] = arr[j + 2];
-        data[i + 1] = arr[j + 1];
-        data[i + 2] = arr[j    ];
-        data[i + 3] = 255; // Set Alpha
-    }
-    c_ctx.putImageData(img, x - vx, y - vy);
-};
-
-cmapImageData = function(x, y, vx, vy, width, height, arr, offset) {
-    var img, i, j, data, bgr, cmap;
-    img = c_ctx.createImageData(width, height);
-    data = img.data;
-    cmap = conf.colourMap;
-    for (i=0, j=offset; i < (width * height * 4); i+=4, j+=1) {
-        bgr = cmap[arr[j]];
-        data[i    ] = bgr[2];
-        data[i + 1] = bgr[1];
-        data[i + 2] = bgr[0];
-        data[i + 3] = 255; // Set Alpha
-    }
-    c_ctx.putImageData(img, x - vx, y - vy);
-};
-
-that.blitImage = function(x, y, width, height, arr, offset) {
-    if (conf.true_color) {
-        bgrxImageData(x, y, viewport.x, viewport.y, width, height, arr, offset);
-    } else {
-        cmapImageData(x, y, viewport.x, viewport.y, width, height, arr, offset);
-    }
-};
-
-that.blitRgbImage = function(x, y, width, height, arr, offset) {
-    if (conf.true_color) {
-        rgbImageData(x, y, viewport.x, viewport.y, width, height, arr, offset);
-    } else {
-        // prolly wrong...
-        cmapImageData(x, y, viewport.x, viewport.y, width, height, arr, offset);
-    }
-};
-
-that.blitStringImage = function(str, x, y) {
-    var img = new Image();
-    img.onload = function () {
-        c_ctx.drawImage(img, x - viewport.x, y - viewport.y);
-    };
-    img.src = str;
-};
-
-// Wrap ctx.drawImage but relative to viewport
-that.drawImage = function(img, x, y) {
-    c_ctx.drawImage(img, x - viewport.x, y - viewport.y);
-};
-
-that.renderQ_push = function(action) {
-    renderQ.push(action);
-    if (renderQ.length === 1) {
-        // If this can be rendered immediately it will be, otherwise
-        // the scanner will start polling the queue (every
-        // requestAnimationFrame interval)
-        scan_renderQ();
-    }
-};
-
-scan_renderQ = function() {
-    var a, ready = true;
-    while (ready && renderQ.length > 0) {
-        a = renderQ[0];
-        switch (a.type) {
-            case 'copy':
-                that.copyImage(a.old_x, a.old_y, a.x, a.y, a.width, a.height);
-                break;
-            case 'fill':
-                that.fillRect(a.x, a.y, a.width, a.height, a.color);
-                break;
-            case 'blit':
-                that.blitImage(a.x, a.y, a.width, a.height, a.data, 0);
-                break;
-            case 'blitRgb':
-                that.blitRgbImage(a.x, a.y, a.width, a.height, a.data, 0);
-                break;
-            case 'img':    
-                if (a.img.complete) {
-                    that.drawImage(a.img, a.x, a.y);
+        // 62: color data (RGBQUAD icColors[])
+        var y, x;
+        for (y = h - 1; y >= 0; y--) {
+            for (x = 0; x < w; x++) {
+                if (x >= w0 || y >= h0) {
+                    cur.push(0);  // blue
+                    cur.push(0);  // green
+                    cur.push(0);  // red
+                    cur.push(0);  // alpha
                 } else {
-                    // We need to wait for this image to 'load'
-                    // to keep things in-order
-                    ready = false;
-                }
-                break;
-        }
-        if (ready) {
-            a = renderQ.shift();
-        }
-    }
-    if (renderQ.length > 0) {
-        requestAnimFrame(scan_renderQ);
-    }
-};
-
-
-that.changeCursor = function(pixels, mask, hotx, hoty, w, h) {
-    if (conf.cursor_uri === false) {
-        Util.Warn("changeCursor called but no cursor data URI support");
-        return;
-    }
-
-    if (conf.true_color) {
-        changeCursor(conf.target, pixels, mask, hotx, hoty, w, h);
-    } else {
-        changeCursor(conf.target, pixels, mask, hotx, hoty, w, h, conf.colourMap);
-    }
-};
-
-that.defaultCursor = function() {
-    conf.target.style.cursor = "default";
-};
-
-return constructor();  // Return the public API interface
-
-}  // End of Display()
-
-
-/* Set CSS cursor property using data URI encoded cursor file */
-function changeCursor(target, pixels, mask, hotx, hoty, w0, h0, cmap) {
-    "use strict";
-    var cur = [], rgb, IHDRsz, RGBsz, ANDsz, XORsz, url, idx, alpha, x, y;
-    //Util.Debug(">> changeCursor, x: " + hotx + ", y: " + hoty + ", w0: " + w0 + ", h0: " + h0);
-
-    var w = w0;
-    var h = h0;
-    if (h < w)
-        h = w;                 // increase h to make it square
-    else
-        w = h;                 // increace w to make it square
-
-    // Push multi-byte little-endian values
-    cur.push16le = function (num) {
-        this.push((num     ) & 0xFF,
-                  (num >> 8) & 0xFF  );
-    };
-    cur.push32le = function (num) {
-        this.push((num      ) & 0xFF,
-                  (num >>  8) & 0xFF,
-                  (num >> 16) & 0xFF,
-                  (num >> 24) & 0xFF  );
-    };
-
-    IHDRsz = 40;
-    RGBsz = w * h * 4;
-    XORsz = Math.ceil( (w * h) / 8.0 );
-    ANDsz = Math.ceil( (w * h) / 8.0 );
-
-    // Main header
-    cur.push16le(0);      // 0: Reserved
-    cur.push16le(2);      // 2: .CUR type
-    cur.push16le(1);      // 4: Number of images, 1 for non-animated ico
-
-    // Cursor #1 header (ICONDIRENTRY)
-    cur.push(w);          // 6: width
-    cur.push(h);          // 7: height
-    cur.push(0);          // 8: colors, 0 -> true-color
-    cur.push(0);          // 9: reserved
-    cur.push16le(hotx);   // 10: hotspot x coordinate
-    cur.push16le(hoty);   // 12: hotspot y coordinate
-    cur.push32le(IHDRsz + RGBsz + XORsz + ANDsz);
-                          // 14: cursor data byte size
-    cur.push32le(22);     // 18: offset of cursor data in the file
-
-
-    // Cursor #1 InfoHeader (ICONIMAGE/BITMAPINFO)
-    cur.push32le(IHDRsz); // 22: Infoheader size
-    cur.push32le(w);      // 26: Cursor width
-    cur.push32le(h*2);    // 30: XOR+AND height
-    cur.push16le(1);      // 34: number of planes
-    cur.push16le(32);     // 36: bits per pixel
-    cur.push32le(0);      // 38: Type of compression
-
-    cur.push32le(XORsz + ANDsz); // 43: Size of Image
-                                 // Gimp leaves this as 0
-
-    cur.push32le(0);      // 46: reserved
-    cur.push32le(0);      // 50: reserved
-    cur.push32le(0);      // 54: reserved
-    cur.push32le(0);      // 58: reserved
-
-    // 62: color data (RGBQUAD icColors[])
-    for (y = h-1; y >= 0; y -= 1) {
-        for (x = 0; x < w; x += 1) {
-            if (x >= w0 || y >= h0) {
-                cur.push(0);          // blue
-                cur.push(0);          // green
-                cur.push(0);          // red
-                cur.push(0);          // alpha
-            } else {
-                idx = y * Math.ceil(w0 / 8) + Math.floor(x/8);
-                alpha = (mask[idx] << (x % 8)) & 0x80 ? 255 : 0;
-                if (cmap) {
-                    idx = (w0 * y) + x;
-                    rgb = cmap[pixels[idx]];
-                    cur.push(rgb[2]);          // blue
-                    cur.push(rgb[1]);          // green
-                    cur.push(rgb[0]);          // red
-                    cur.push(alpha);           // alpha
-                } else {
-                    idx = ((w0 * y) + x) * 4;
-                    cur.push(pixels[idx + 2]); // blue
-                    cur.push(pixels[idx + 1]); // green
-                    cur.push(pixels[idx    ]); // red
-                    cur.push(alpha);           // alpha
+                    var idx = y * Math.ceil(w0 / 8) + Math.floor(x / 8);
+                    var alpha = (mask[idx] << (x % 8)) & 0x80 ? 255 : 0;
+                    if (cmap) {
+                        idx = (w0 * y) + x;
+                        var rgb = cmap[pixels[idx]];
+                        cur.push(rgb[2]);  // blue
+                        cur.push(rgb[1]);  // green
+                        cur.push(rgb[0]);  // red
+                        cur.push(alpha);   // alpha
+                    } else {
+                        idx = ((w0 * y) + x) * 4;
+                        cur.push(pixels[idx + 2]); // blue
+                        cur.push(pixels[idx + 1]); // green
+                        cur.push(pixels[idx]);     // red
+                        cur.push(alpha);           // alpha
+                    }
                 }
             }
         }
-    }
 
-    // XOR/bitmask data (BYTE icXOR[])
-    // (ignored, just needs to be right size)
-    for (y = 0; y < h; y += 1) {
-        for (x = 0; x < Math.ceil(w / 8); x += 1) {
-            cur.push(0x00);
+        // XOR/bitmask data (BYTE icXOR[])
+        // (ignored, just needs to be the right size)
+        for (y = 0; y < h; y++) {
+            for (x = 0; x < Math.ceil(w / 8); x++) {
+                cur.push(0);
+            }
         }
-    }
 
-    // AND/bitmask data (BYTE icAND[])
-    // (ignored, just needs to be right size)
-    for (y = 0; y < h; y += 1) {
-        for (x = 0; x < Math.ceil(w / 8); x += 1) {
-            cur.push(0x00);
+        // AND/bitmask data (BYTE icAND[])
+        // (ignored, just needs to be the right size)
+        for (y = 0; y < h; y++) {
+            for (x = 0; x < Math.ceil(w / 8); x++) {
+                cur.push(0);
+            }
         }
-    }
 
-    url = "data:image/x-icon;base64," + Base64.encode(cur);
-    target.style.cursor = "url(" + url + ") " + hotx + " " + hoty + ", default";
-    //Util.Debug("<< changeCursor, cur.length: " + cur.length);
-}
+        var url = 'data:image/x-icon;base64,' + Base64.encode(cur);
+        target.style.cursor = 'url(' + url + ')' + hotx + ' ' + hoty + ', default';
+    };
+})();
