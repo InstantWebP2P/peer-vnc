@@ -1,4 +1,4 @@
-#peer-vnc
+peer-vnc
 ==========
 
 Access to VNC desktop from anywhere using web browser
