@@ -76,8 +76,8 @@ var Proxy = module.exports = function(vncs, fn, options){
             ]
         },
         
-        vmode: WEBPP.vURL.URL_MODE_HOST,
-        
+        vmode: WEBPP.vURL.URL_MODE_PATH,
+
         // secure mode
         secmode: (options && options.secmode === 'ssl') ? WEBPP.SEP.SEP_SEC_SSL :
                                                           WEBPP.SEP.SEP_SEC_SSL_ACL_HOST,
