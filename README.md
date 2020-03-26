@@ -22,13 +22,6 @@ Access to VNC desktop from anywhere using web browser
 * npm install peer-vnc, or git clone [peer-vnc](https://github.com/InstantWebP2P/peer-vnc.git) && cd peer-vnc && npm install
 * setup your own iWebPP.io backend controller services refer to [iWebPP.io-controller](https://github.com/InstantWebP2P/iwebpp.io-controller)
 
-### Install with prebuilt packages, just download and unzip it
-* [windows package](https://github.com/InstantWebP2P/peer-vnc/archive/pkg-release-windows.zip)
-* [OSx package](https://github.com/InstantWebP2P/peer-vnc/archive/pkg-release-osx.zip)
-* [RPI package](https://github.com/InstantWebP2P/peer-vnc/archive/pkg-release-rpi.zip)
-* [Linux X86_64 package](https://github.com/InstantWebP2P/peer-vnc/archive/pkg-release-linux64.zip)
-* [Linux X86 package](https://github.com/InstantWebP2P/peer-vnc/archive/pkg-release-linux32.zip)
-
 ### [Discussion group](https://groups.google.com/d/forum/iwebpp)
 
 ### Usage/API:
