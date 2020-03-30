@@ -25,7 +25,7 @@
   "dependencies": {
     "commander": "1.1.1",
     "connect": "2.30.2",
-    "AppNet.io": "latest",
+    "appnet.io": "latest",
     "optimist": "0.3.x",
     "qrcode-terminal": "0.9.2",
     "wspp": "latest",
