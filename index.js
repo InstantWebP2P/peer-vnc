@@ -1,7 +1,7 @@
-// noVNC proxy implementation with iWebPP.io
+// noVNC proxy implementation with AppNet.io
 // Copyright (c) 2013-present Tom Zhou<iwebpp@gmail.com>
 
-var WEBPP           = require('iwebpp.io'),
+var WEBPP           = require('appnet.io'),
     noVNC           = require('./novnc'),
     http            = require('http'),
     https           = require('https'),
