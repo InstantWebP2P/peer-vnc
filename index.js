@@ -18,7 +18,7 @@ var WEBPP           = require('appnet.io'),
 var Debug = 0;
 
 // Proxy class
-// a proxy will contain one iwebpp.io name-client
+// a proxy will contain one appnet.io name-client
 // -    vncs: array of VNC server host:port pair, like ['localhost:5900', '51dese.com:5901'}] 
 // -      fn: callback to pass proxy informations
 // - options: user custom parameters, like {usrkey: ..., domain: ..., endpoints: ..., turn: ...}

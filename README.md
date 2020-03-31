@@ -8,7 +8,7 @@ Access to VNC desktop from anywhere using web browser
 * Support all HTML5-enabled web browsers
 * Access VNC desktop from everywhere
 * Expose VNC desktop behind NAT/FW
-* Proxy to multiple VNC server in single iwebpp.io client
+* Proxy to multiple VNC server in single appnet.io client
 * Provide end-to-end security
 * Run over STUN session with papp-pac
 * Support http basic-auth
@@ -20,7 +20,7 @@ Access to VNC desktop from anywhere using web browser
 
 * peer-vnc depend on node-httpp, please build it from repo [node-httpp](https://github.com/InstantWebP2P/node-httpp)
 * npm install peer-vnc, or git clone [peer-vnc](https://github.com/InstantWebP2P/peer-vnc.git) && cd peer-vnc && npm install
-* setup your own iWebPP.io backend controller services refer to [iWebPP.io-controller](https://github.com/InstantWebP2P/iwebpp.io-controller)
+* setup your own AppNet.io backend controller services refer to [AppNet.io-controller](https://github.com/InstantWebP2P/appnet.io-controller)
 
 ### [Discussion group](https://groups.google.com/d/forum/iwebpp)
 
@@ -45,7 +45,7 @@ Access to VNC desktop from anywhere using web browser
        VNC                   Proxy URL(please open it on browser)
        192.168.1.1:5900        https://41c522dab4ae47f9.vurl.51dese.com:51688/vtoken/516c97b3070de2e1/peervnc
 
-    4. run over STUN with iwebpp.io-stun-proxy, just embed 'vlocal.' as sub-domain in origin vURL, 
+    4. run over STUN with appnet.io-stun-proxy, just embed 'vlocal.' as sub-domain in origin vURL, 
        like https://41c522dab4ae47f9.vurl.vlocal.51dese.com:51688/vtoken/516c97b3070de2e1/peervnc
        
     5. use peer-vnc-direct binary without P2P, like  ./bin/peer-vnc-direct -t 192.168.1.1:5900 -s acl -a srv -b user:pass -d /auto/vshare/
