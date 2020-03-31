@@ -43,13 +43,13 @@ var Proxy = module.exports = function(vncs, fn, options){
     // check basic auth
     var basicauth = false;
     if (options && options.auth) {
-    	var astr = options.auth.split(':');
-    	basicauth = {username: astr && astr[0], password: astr && astr[1]};
+        var astr = options.auth.split(':');
+        basicauth = {username: astr && astr[0], password: astr && astr[1]};
     }
     
     // check upload 
     var fileupload = (options && options.upload) || false;
-	
+    
     // 1.
     // proxy URLs
     self.proxyURL = {}; // vURL for VNC server
@@ -85,55 +85,55 @@ var Proxy = module.exports = function(vncs, fn, options){
         sslmode: (options && options.sslmode === 'both') ? WEBPP.SEP.SEP_SSL_AUTH_SRV_CLNT : 
                                                            WEBPP.SEP.SEP_SSL_AUTH_SRV_ONLY
     });
-	
-	// 2.1
-	// check ready
-	nmcln.once('ready', function(){
-	    if (Debug) console.log('name-client ready on vURL:'+nmcln.vurl);
-	    
-	    // 3.
-	    // setup noVNC proxy
-	    for (var idx = 0; idx < vncs.length; idx ++) {
-	    	var vncstrs = vncs[idx].split(':');
-	    	var vnchost = vncstrs[0];
-	    	var vncport = vncstrs[1] ? 
-	    			      parseInt(vncstrs[1], 10) : 
-	    			      5900; // default VNC port
+    
+    // 2.1
+    // check ready
+    nmcln.once('ready', function(){
+        if (Debug) console.log('name-client ready on vURL:'+nmcln.vurl);
+        
+        // 3.
+        // setup noVNC proxy
+        for (var idx = 0; idx < vncs.length; idx ++) {
+            var vncstrs = vncs[idx].split(':');
+            var vnchost = vncstrs[0];
+            var vncport = vncstrs[1] ? 
+                          parseInt(vncstrs[1], 10) : 
+                          5900; // default VNC port
 
-	    	// assume vncserver listen on 5900 above
-	    	vncport = (vncport < 5900) ? 5900 + vncport : vncport;
+            // assume vncserver listen on 5900 above
+            vncport = (vncport < 5900) ? 5900 + vncport : vncport;
 
-	    	// add VNC host proxy entry
-	    	self.addVNC({host: vnchost, port: vncport});
-	    }
-	    
-	    // 4.
-	    // create http App
-	    var appHttp = Connect();
-	    
-	    // 4.1
-	    // add third-party connect middle-ware
-	    // TBD...
-	    
-	    // 4.2
-	    // add noVNC web service in App
-	    appHttp.use(noVNC.webServer({auth: basicauth, upload: fileupload}));
-	    
-	    // 5.
-	    // hook http App on name-client
-	    nmcln.bsrv.srv.on('request', appHttp);
-	    
-	    // 5.1
-	    // handle http CONNECT request in case come from forward proxy
+            // add VNC host proxy entry
+            self.addVNC({host: vnchost, port: vncport});
+        }
+        
+        // 4.
+        // create http App
+        var appHttp = Connect();
+        
+        // 4.1
+        // add third-party connect middle-ware
+        // TBD...
+        
+        // 4.2
+        // add noVNC web service in App
+        appHttp.use(noVNC.webServer({auth: basicauth, upload: fileupload}));
+        
+        // 5.
+        // hook http App on name-client
+        nmcln.bsrv.srv.on('request', appHttp);
+        
+        // 5.1
+        // handle http CONNECT request in case come from forward proxy
         // !!! just create connection to peer-vnc httpps server self.
-	    nmcln.bsrv.srv.on('connect', function(req, socket, head) {
+        nmcln.bsrv.srv.on('connect', function(req, socket, head) {
             var roptions = {
-			        port: nmcln.port,
-			        host: nmcln.ipaddr,
+                    port: nmcln.port,
+                    host: nmcln.ipaddr,
                 localAddress: {
                     addr: nmcln.ipaddr
                 }
-	        };
+            };
             
             // check req.url
             if (!(req.url && nmcln.vurl.match((req.url.split(':'))[0]))) {
@@ -148,31 +148,31 @@ var Proxy = module.exports = function(vncs, fn, options){
                 if (Debug) console.log('http tunnel proxy, got connected!');   
                 
                 ///srvSocket.write(head);
-			    socket.pipe(srvSocket);
-			     
-			    socket.write('HTTP/1.1 200 Connection Established\r\n' +
-			                 'Proxy-agent: Node-Proxy\r\n' +
-			                 '\r\n');					    
-			    srvSocket.pipe(socket);
+                socket.pipe(srvSocket);
+                 
+                socket.write('HTTP/1.1 200 Connection Established\r\n' +
+                             'Proxy-agent: Node-Proxy\r\n' +
+                             '\r\n');                        
+                srvSocket.pipe(socket);
             });
             
-		    srvSocket.on('error', function(e) {
-		        console.log("http tunnel proxy, socket error: " + e);
-		        socket.end();
-		    });
-	    });
-	    
-	    // 6.
-	    // pass proxy URLs back
-	    fn(null, self.proxyURL);
-	});
-	
-	// 2.2
-	// check error
-	nmcln.on('error', function(err){
-	    console.log('name-client create failed:'+JSON.stringify(err));
-	    fn(err);
-	});
+            srvSocket.on('error', function(e) {
+                console.log("http tunnel proxy, socket error: " + e);
+                socket.end();
+            });
+        });
+        
+        // 6.
+        // pass proxy URLs back
+        fn(null, self.proxyURL);
+    });
+    
+    // 2.2
+    // check error
+    nmcln.on('error', function(err){
+        console.log('name-client create failed:'+JSON.stringify(err));
+        fn(err);
+    });
 };
 
 // add VNC host:port entry
@@ -185,8 +185,8 @@ Proxy.prototype.addVNC = function(vnc) {
     // 0.
     // check vnc host/port
     if (!(vnc && 
-    	 (typeof vnc.host === 'string') && 
-    	 (typeof vnc.port === 'number'))) {
+         (typeof vnc.host === 'string') && 
+         (typeof vnc.port === 'number'))) {
         console.log('invalid VNC host '+JSON.stringify(vnc));
         return self;
     }
@@ -194,32 +194,32 @@ Proxy.prototype.addVNC = function(vnc) {
     // 1.
     // create ws server to proxy VNC/RFB data
     var vncstr = vnc.host+':'+vnc.port;
-	var wspath = '/'+vnc.host+'-'+vnc.port;
-	var vncwss = new WebSocketServer({httpp: true, server: self.nmcln.bsrv.srv, path: wspath});
-	
-	vncwss.on('connection', noVNC.tcpProxy({host: vnc.host, port: vnc.port}));
+    var wspath = '/'+vnc.host+'-'+vnc.port;
+    var vncwss = new WebSocketServer({httpp: true, server: self.nmcln.bsrv.srv, path: wspath});
+    
+    vncwss.on('connection', noVNC.tcpProxy({host: vnc.host, port: vnc.port}));
 
-	self.proxyWss[vncstr] = vncwss;
-	self.proxyURL[vncstr] = self.nmcln.vurl + wspath;
-		
-	// 2.
-	// report peer-service
-	// like {vurl:x,cate:x,name:x,desc:x,tags:x,acls:x,accounting:x,meta:x}
-	self.nmcln.reportService({
-		vurl: self.proxyURL[vncstr],
-		cate: 'peer-vnc',
-		name: 'vnc'+Object.keys(self.proxyWss).length,
-		meta: {
-				vnchost: vnc.host === 'localhost' ? OS.hostname() : vnc.host,
-				vncport: vnc.port
-			}
-	});
-	
-	// 3.
-	// update peer-service: connection loss, etc
-	// TBD...
-	    
-	return self.proxyURL[vncstr];
+    self.proxyWss[vncstr] = vncwss;
+    self.proxyURL[vncstr] = self.nmcln.vurl + wspath;
+        
+    // 2.
+    // report peer-service
+    // like {vurl:x,cate:x,name:x,desc:x,tags:x,acls:x,accounting:x,meta:x}
+    self.nmcln.reportService({
+        vurl: self.proxyURL[vncstr],
+        cate: 'peer-vnc',
+        name: 'vnc'+Object.keys(self.proxyWss).length,
+        meta: {
+                vnchost: vnc.host === 'localhost' ? OS.hostname() : vnc.host,
+                vncport: vnc.port
+            }
+    });
+    
+    // 3.
+    // update peer-service: connection loss, etc
+    // TBD...
+        
+    return self.proxyURL[vncstr];
 };
 
 // remove VNC host:port entry
@@ -231,8 +231,8 @@ Proxy.prototype.removeVNC = function(vnc, fn) {
     // 0.
     // check vnc host/port
     if (!(vnc && 
-    	 (typeof vnc.host === 'string') && 
-    	 (typeof vnc.port === 'number'))) {
+         (typeof vnc.host === 'string') && 
+         (typeof vnc.port === 'number'))) {
         console.log('invalid VNC host '+JSON.stringify(vnc));
         return self;
     }
@@ -242,14 +242,14 @@ Proxy.prototype.removeVNC = function(vnc, fn) {
     var vncstr = vnc.host+':'+vnc.port;
     
     if (self.proxyWss[vncstr]) {
-    	self.proxyWss[vncstr].close();
+        self.proxyWss[vncstr].close();
 
-    	// 2.
-    	// remove proxy URL after 2s
-    	setTimeout(function(){
-    		self.proxyWss[vncstr] = null;
-    		self.proxyURL[vncstr] = null;
-    	}, 2000);
+        // 2.
+        // remove proxy URL after 2s
+        setTimeout(function(){
+            self.proxyWss[vncstr] = null;
+            self.proxyURL[vncstr] = null;
+        }, 2000);
     }
     
     return self;

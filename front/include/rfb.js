@@ -1362,7 +1362,7 @@ var RFB;
 
             sock._sQlen += 24;
         },
-	
+    
         pixelFormat: function (sock, bpp, depth, true_color) {
             var buff = sock._sQ;
             var offset = sock._sQlen;
@@ -1477,7 +1477,7 @@ var RFB;
 
             sock._sQlen += 10;
         },
-	
+    
         // UTF-8 compatible string
         clientCutUTF8Text: function (sock, text) {
             var buff = sock._sQ;
