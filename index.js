@@ -1,5 +1,5 @@
 // noVNC proxy implementation with AppNet.io
-// Copyright (c) 2013-present Tom Zhou<iwebpp@gmail.com>
+// Copyright (c) 2013-present Tom Zhou<appnet.link@gmail.com>
 
 var WEBPP           = require('appnet.io'),
     noVNC           = require('./novnc'),

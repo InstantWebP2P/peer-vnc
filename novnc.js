@@ -1,5 +1,5 @@
 // noVNC port of Node.js
-// Copyright (c) 2013 Tom Zhou<iwebpp@gmail.com>
+// Copyright (c) 2013 Tom Zhou<appnet.link@gmail.com>
 
 var Connect = require('connect'),
     Net = require('net'),

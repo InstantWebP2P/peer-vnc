@@ -1,8 +1,8 @@
 {
-  "author": "Tom Zhou <iwebpp@gmail.com> (https://aiworkspace.com)",
+  "author": "Tom Zhou <appnet.link@gmail.com> (https://appnet.link)",
   "name": "peer-vnc",
   "description": "access to VNC desktop from anywhere",
-  "version": "3.2.1",
+  "version": "3.3.0",
   "repository": {
     "type": "git",
     "url": "git://github.com/InstantWebP2P/peer-vnc.git"
