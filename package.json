@@ -2,7 +2,7 @@
   "author": "Tom Zhou <appnet.link@gmail.com> (https://appnet.link)",
   "name": "peer-vnc",
   "description": "access to VNC desktop from anywhere",
-  "version": "3.3.0",
+  "version": "3.3.1",
   "repository": {
     "type": "git",
     "url": "git://github.com/InstantWebP2P/peer-vnc.git"
