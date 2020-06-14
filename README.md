@@ -18,9 +18,9 @@ Access to VNC desktop from anywhere using web browser
 
 ### Install manually
 
-* peer-vnc depend on node-httpp, please build it from repo [node-httpp](https://github.com/InstantWebP2P/node-httpp)
+* peer-vnc depend on node-httpp, please build it from repo [nodejs-httpp](https://github.com/InstantWebP2P/nodejs-httpp)
 * npm install peer-vnc, or git clone [peer-vnc](https://github.com/InstantWebP2P/peer-vnc.git) && cd peer-vnc && npm install
-* setup your own AppNet.io backend controller services refer to [AppNet.io-controller](https://github.com/InstantWebP2P/appnet.io-controller)
+* setup your own AppNet.link backend controller services refer to [AppNet.link-controller](https://github.com/InstantWebP2P/appnet.link-controller)
 
 ### Usage/API:
 
