@@ -1,3 +1,5 @@
+peer-vnc is Copyright (C) 2012-present Tom Zhou <appnet.link@gmail.com>
+
 noVNC is Copyright (C) 2011 Joel Martin <github@martintribe.org>
 
 The noVNC core library files are licensed under the MPL 2.0 (Mozilla
