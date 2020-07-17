@@ -8,7 +8,7 @@ Access VNC desktop from anywhere using web browser even behind NAT/FW
 * Support all HTML5-enabled web browsers
 * Access VNC desktop from everywhere
 * Expose VNC desktop behind NAT/FW
-* Proxy to multiple VNC server in single appnet.io client
+* Proxy to multiple VNC server in single [appnet.link](https://github.com/InstantWebP2P/appnet.link) client
 * Provide end-to-end security
 * Run over STUN session with papp-pac
 * Support http basic-auth
