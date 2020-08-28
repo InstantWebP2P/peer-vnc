@@ -1,7 +1,7 @@
 peer-vnc
 ==========
 
-Access VNC desktop from anywhere using web browser even behind NAT/FW
+Access VNC from anywhere using web browser even behind NAT/FW
 
 ### Features
 
