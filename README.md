@@ -14,7 +14,7 @@ Access VNC from anywhere using web browser even behind NAT/FW
 * Support http basic-auth
 * Support upload file to remote server by drag and drop
 * Support VNC fullscreen mode
-* Support UTF-8 clipboard
+* Support UTF-8 clipboard in combined with [zvnc](https://github.com/5GApp/zvnc) Xvnc server
 
 ### Install manually
 
