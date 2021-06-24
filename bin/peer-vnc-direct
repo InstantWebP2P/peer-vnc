@@ -10,10 +10,10 @@ var util            = require('util'),
     noVNC           = require('../novnc'),
     http            = require('http'),
     https           = require('https'),
-    httpp           = require('httpp'),
-    httpps          = require('httpps'),
+    //httpp           = require('httpp'),
+    //httpps          = require('httpps'),
     fs              = require('fs');
-    WebSocket       = require('wspp'),
+    WebSocket       = require('ws'),
     WebSocketServer = WebSocket.Server,
     Connect         = require('connect');
 
@@ -116,16 +116,16 @@ if (isHttps) {
     srv.listen(port);
     ///console.log('peerVNC https server listening on ' + port);
 
-    srvpp = httpps.createServer(certs, noVNC.webServer(options));
-    srvpp.listen(port);
-    ///console.log('peerVNC httpps server listening on ' + port);
+   // srvpp = httpps.createServer(certs, noVNC.webServer(options));
+   // srvpp.listen(port);
+   ///console.log('peerVNC httpps server listening on ' + port);
 } else {
     srv = http.createServer(noVNC.webServer(options));
     srv.listen(port);
     ///console.log('peerVNC http server listening on ' + port);
 
-    srvpp = httpp.createServer(noVNC.webServer(options));
-    srvpp.listen(port);
+    //srvpp = httpp.createServer(noVNC.webServer(options));
+    //srvpp.listen(port);
     ///console.log('peerVNC httpp server listening on ' + port);
 }
 
@@ -142,8 +142,8 @@ for (var idx = 0; idx < vncsrvs.length; idx ++) {
     var vncwss = new WebSocketServer({httpp: false, server: srv, path: wspath});
     vncwss.on('connection', noVNC.tcpProxy({host: vnchost, port: vncport}));
 
-    var vncwsspp = new WebSocketServer({httpp: true, server: srvpp, path: wspath});
-    vncwsspp.on('connection', noVNC.tcpProxy({host: vnchost, port: vncport}));
+    ///var vncwsspp = new WebSocketServer({httpp: true, server: srvpp, path: wspath});
+    ///vncwsspp.on('connection', noVNC.tcpProxy({host: vnchost, port: vncport}));
 
     proxes[vncstr] = (isHttps ? 'https' : 'http') + '://localhost:'+port + wspath;
 }
