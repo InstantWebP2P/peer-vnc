@@ -5,7 +5,7 @@ var Connect = require('connect'),
     Net = require('net'),
     Buffer = require('buffer').Buffer,
     Fs = require('fs'),
-    WSS = require('wspp').Stream;
+    WSS = require('wspp').createWebSocketStream;
 
 // authentication module
 var httpauth = require('http-auth');
@@ -105,7 +105,7 @@ var tcpProxy = module.exports.tcpProxy = function(vnc){
             if (Debug) console.log('tcp connection...');
 
             // wrap stream on ws
-            var wss = new WSS(ws);
+            var wss = WSS(ws);
 
             // pipe each other
             wss.pipe(ts);
