@@ -2,7 +2,7 @@
   "author": "Tom Zhou <appnet.link@gmail.com> (https://appnet.link)",
   "name": "peer-vnc",
   "description": "access to VNC desktop from anywhere",
-  "version": "3.3.3",
+  "version": "4.1.0",
   "repository": {
     "type": "git",
     "url": "git://github.com/InstantWebP2P/peer-vnc.git"
@@ -11,11 +11,11 @@
     "peer",
     "p2p",
     "webp2p",
-    "http",
+    "httpp",
     "vnc"
   ],
   "engines": {
-    "node": "0.8.x"
+    "node": ">=8.3.0"
   },
   "main": "index",
   "bin": {
@@ -25,7 +25,7 @@
   "dependencies": {
     "commander": "1.1.1",
     "connect": "2.30.2",
-    "appnet.io": "3.3.7",
+    "appnet.link": "4.1.x",
     "optimist": "0.3.x",
     "qrcode-terminal": "0.9.2",
     "wspp": "latest",
